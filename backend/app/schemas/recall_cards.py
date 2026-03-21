@@ -1,19 +1,20 @@
 from pydantic import BaseModel
-import uuid
 from datetime import datetime
+from typing import List
+from uuid import UUID
 
 class RecallCardBase(BaseModel):
     topic: str
-    keywords: list[str]
+    keywords: List[str]
     diagram_image_url: str
     analogy: str
 
 class RecallCardCreate(RecallCardBase):
-    user_id: uuid.UUID
+    user_id: UUID
 
 class RecallCardOut(RecallCardBase):
-    id: uuid.UUID
+    id: UUID
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        from_attributes = True  

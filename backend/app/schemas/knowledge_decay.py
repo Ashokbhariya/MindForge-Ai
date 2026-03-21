@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-import uuid
+from uuid import UUID
 from datetime import datetime
 
 class KnowledgeDecayBase(BaseModel):
@@ -10,10 +10,10 @@ class KnowledgeDecayBase(BaseModel):
     decay_model_type: str
 
 class KnowledgeDecayCreate(KnowledgeDecayBase):
-    user_id: uuid.UUID
+    user_id: UUID
 
 class KnowledgeDecayOut(KnowledgeDecayBase):
-    id: uuid.UUID
+    id: UUID
     created_at: datetime
 
     class Config:

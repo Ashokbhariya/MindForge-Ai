@@ -1,51 +1,28 @@
-# # ── Environment Variables (NEVER commit) ────────────────────────
+﻿# Environment variables
 .env
 .env.*
 *.env
 
-# ── Python ───────────────────────────────────────────────────────
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-
-# ── Virtual Environments ─────────────────────────────────────────
 venv/
 .venv/
-env/
-ENV/
+*.egg-info/
 
-# ── Node / Frontend ──────────────────────────────────────────────
+# Node
 node_modules/
-frontend/node_modules/
 dist/
 build/
-.next/
 
-# ── Database ─────────────────────────────────────────────────────
-*.sqlite3
-*.db
-
-# ── Generated Files ──────────────────────────────────────────────
-generated_pdfs/
-*.pdf
-
-# ── Docker ───────────────────────────────────────────────────────
-docker-compose.yml
-Docker-compose.yml
-
-# ── VS Code ──────────────────────────────────────────────────────
+# VS Code
 .vscode/
 
-# ── OS Files ─────────────────────────────────────────────────────
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# ── Logs ─────────────────────────────────────────────────────────
+# Logs
 *.log
-logs/

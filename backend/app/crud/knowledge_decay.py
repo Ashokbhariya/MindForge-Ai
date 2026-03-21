@@ -2,13 +2,13 @@ from sqlalchemy.orm import Session
 from app.models.models import KnowledgeDecayEvent
 from app.schemas.knowledge_decay import KnowledgeDecayCreate
 from fastapi import HTTPException
-import uuid
+from uuid import UUID, uuid4
 import traceback
 
-def create_decay_event(db: Session, data: KnowledgeDecayCreate):
+def create_decay_event(db: Session, data: KnowledgeDecayCreate) -> KnowledgeDecayEvent:
     try:
         event = KnowledgeDecayEvent(
-            id=uuid.uuid4(),
+            id=uuid4(),
             user_id=data.user_id,
             topic=data.topic,
             last_interaction=data.last_interaction,
@@ -26,10 +26,9 @@ def create_decay_event(db: Session, data: KnowledgeDecayCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Database error while creating decay event")
 
-
-def get_decay_by_user(db: Session, user_id: str):
+def get_decay_by_user(db: Session, user_id: UUID):
     try:
-        return db.query(KnowledgeDecayEvent).filter(KnowledgeDecayEvent.user_id == uuid.UUID(user_id)).all()
+        return db.query(KnowledgeDecayEvent).filter(KnowledgeDecayEvent.user_id == user_id).all()
     except Exception as e:
         print("❌ Error fetching decay events:", e)
         raise HTTPException(status_code=500, detail="Error fetching decay events")
