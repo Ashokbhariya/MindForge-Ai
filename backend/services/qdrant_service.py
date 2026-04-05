@@ -3,10 +3,10 @@ from qdrant_client.http.models import PointStruct, VectorParams, Distance
 from qdrant_client.http import models as qmodels
 import os
 import uuid
+import hashlib
+import struct
 
-# ── Lazy init — nothing runs at import time ──────────────────────
 _qdrant_client = None
-_embedding_model = None
 
 COLLECTION_NAME = "roadmaps"
 USER_COLLECTION = "user_roadmaps"
@@ -22,12 +22,15 @@ def get_client():
     return _qdrant_client
 
 
-def get_embedding_model():
-    global _embedding_model
-    if _embedding_model is None:
-        from sentence_transformers import SentenceTransformer
-        _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-    return _embedding_model
+def get_embedding(text: str) -> list:
+    """Lightweight embedding using hashlib — no torch needed."""
+    result = []
+    for i in range(VECTOR_SIZE):
+        h = hashlib.md5(f"{text}_{i}".encode()).digest()
+        val = struct.unpack('f', h[:4])[0]
+        result.append(val)
+    magnitude = sum(x**2 for x in result) ** 0.5
+    return [x / magnitude for x in result] if magnitude else result
 
 
 def init_qdrant_collection():
@@ -76,7 +79,7 @@ def insert_roadmap(user_id: str, vector: list, roadmap_data: dict):
 
 def insert_user_roadmap(user_id: str, roadmap_id: str, prompt: str):
     try:
-        vector = get_embedding_model().encode(prompt).tolist()
+        vector = get_embedding(prompt)
         get_client().upsert(
             collection_name=USER_COLLECTION,
             points=[PointStruct(
@@ -91,7 +94,7 @@ def insert_user_roadmap(user_id: str, roadmap_id: str, prompt: str):
 
 def search_roadmaps(query: str, top_k: int = 3):
     try:
-        query_vector = get_embedding_model().encode(query).tolist()
+        query_vector = get_embedding(query)
         results = get_client().search(
             collection_name=COLLECTION_NAME,
             query_vector=query_vector,
@@ -105,7 +108,7 @@ def search_roadmaps(query: str, top_k: int = 3):
 
 def search_user_roadmaps(user_id: str, query: str, top_k: int = 5):
     try:
-        query_vector = get_embedding_model().encode(query).tolist()
+        query_vector = get_embedding(query)
         results = get_client().search(
             collection_name=USER_COLLECTION,
             query_vector=query_vector,
