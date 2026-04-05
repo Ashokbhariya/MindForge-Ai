@@ -110,7 +110,7 @@
 # # ✅ Fixed: allow_credentials must be True (bool), not a list
 # app.add_middleware(
 #     CORSMiddleware,
-#     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+#     allow_origins=["*"],
 #     allow_credentials=True,
 #     allow_methods=["*"],
 #     allow_headers=["*"],
@@ -178,7 +178,7 @@ app.mount("/generated_pdfs", StaticFiles(directory="generated_pdfs"), name="gene
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
