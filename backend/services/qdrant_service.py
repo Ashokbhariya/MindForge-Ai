@@ -17,7 +17,7 @@ def get_client():
     global _qdrant_client
     if _qdrant_client is None:
         url = os.getenv("QDRANT_URL", "http://localhost:6333")
-        api_key = os.getenv("QDRANT_API_KEY", None)
+        api_key_val = os.getenv("QDRANT_API_KEY", None); api_key = None if api_key_val in (None, "none", "") else api_key_val
         _qdrant_client = QdrantClient(url=url, api_key=api_key)
     return _qdrant_client
 

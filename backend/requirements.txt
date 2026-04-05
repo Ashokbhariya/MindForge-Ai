@@ -20,5 +20,4 @@ google-api-python-client
 weasyprint
 markdown2
 python-dateutil
-
-sentence-transformers
+fpdf2
