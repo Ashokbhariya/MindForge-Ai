@@ -11,6 +11,10 @@ venv/
 .venv/
 *.egg-info/
 
+# Python caches / tests
+.pytest_cache/
+.mypy_cache/
+
 # Node
 node_modules/
 dist/
@@ -27,17 +31,9 @@ desktop.ini
 # Logs
 *.log
 
-# Media
+# Media / generated files
 *.mp4
-
-# Generated files
-generated_pdfs/
 *.pdf
-
-# Random accidental files/folders
-cd
-
-# Environment variables
-.env
-.env.*
-*.env
+*.zip
+generated_pdfs/
+backend/generated_pdfs/
