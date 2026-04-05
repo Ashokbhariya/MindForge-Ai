@@ -9,7 +9,7 @@ import AboutImg from "../assets/about.png";
 import Card1 from "../assets/card1.png";
 import Card2 from "../assets/card2.png";
 import Card3 from "../assets/card3.png";
-import heroVideo from "../assets/hero-bg.mp4";
+src="https://res.cloudinary.com/dh3e5pick/video/upload/v1775414685/hero-bg_nwjjpe.mp4"
 import learnImg from "../assets/learn.png";
 import fitImg from "../assets/fit.png";
 import confuseImg from "../assets/confuse.png";
