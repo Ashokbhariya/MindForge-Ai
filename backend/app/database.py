@@ -27,7 +27,14 @@ print("DATABASE_URL ACTUAL VALUE:", repr(os.getenv("DATABASE_URL")))
 # if not DATABASE_URL:
 #     raise ValueError("DATABASE_URL not found in .env file!")
 
-DATABASE_URL = "postgresql+psycopg2://postgres:root123@localhost:5432/mf2"
+# DATABASE_URL = "postgresql+psycopg2://postgres:root123@localhost:5432/mf2"
+
+from dotenv import load_dotenv
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL not found in .env file!")
+
 
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)

@@ -1,198 +1,135 @@
-import { useEffect, useRef, useState } from "react";
-import logo from "../assets/logo.png";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function DashNavbar() {
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const dropdownRef = useRef();
+const SERVICES = [
+  { label: "🗺️ Roadmap",           to: "/roadmap"            },
+  { label: "📚 Learn & Quiz",       to: "/learn&quiz"         },
+  { label: "🔁 Recall Card",        to: "/recallcard"         },
+  { label: "🧩 Confusion Detector", to: "/confusion-detector" },
+  { label: "📊 Progress Card",      to: "/progresscard"       },
+];
 
-  const toggleDropdown = (menu) => {
-    setActiveDropdown((prev) => (prev === menu ? null : menu));
-  };
+export default function DashNav() {
+  const navigate = useNavigate();
+  const [user, setUser]               = useState(null);
+  const [userDropdown, setUserDropdown] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const userRef     = useRef(null);
+  const servicesRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setActiveDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
+    } catch { /* ignore */ }
   }, []);
 
-  const services = [
-    "Roadmap",
-    "Learn & Quiz",
-    "Confusion Detector",
-    "Progress Card",
-    "Recall Card",
-  ];
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (userRef.current && !userRef.current.contains(e.target))
+        setUserDropdown(false);
+      if (servicesRef.current && !servicesRef.current.contains(e.target))
+        setServicesOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "/";
+  };
+
+  const initial = user?.name?.charAt(0)?.toUpperCase() || "U";
 
   return (
-    <nav
-      className="bg-white shadow-md px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center relative z-10"
-      ref={dropdownRef}
-    >
-      {/* Logo + Title */}
-      <div className="flex items-center gap-3 mb-4 md:mb-0">
-        <div className="w-10 h-10 rounded-full bg-[#1a213d] flex items-center justify-center overflow-hidden">
-          <img src={logo} alt="Logo" className="h-6 w-6 object-contain" />
+    <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm">
+      {/* Logo */}
+      <Link to="/" className="flex items-center gap-2">
+        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span className="text-white font-bold text-sm">M</span>
         </div>
-        <h1 className="text-2xl font-bold text-[#1025f9]">MindForgeAI</h1>
-      </div>
+        <span className="text-xl font-bold text-primary">MindForgeAI</span>
+      </Link>
 
-      {/* Right-aligned Buttons */}
-      <div className="flex items-center gap-4 ml-auto relative">
-        {/* Services Dropdown */}
-        <div className="relative">
+      <div className="flex items-center gap-4">
+
+        {/* ── Services dropdown ── */}
+        <div className="relative" ref={servicesRef}>
           <button
-            onClick={() => toggleDropdown("services")}
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+            onClick={() => setServicesOpen((v) => !v)}
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-1"
           >
             Services
+            <svg
+              className={`w-3 h-3 transition-transform ${servicesOpen ? "rotate-180" : ""}`}
+              fill="none" stroke="currentColor" strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
 
-          {activeDropdown === "services" && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
-              <ul className="py-2 text-sm text-gray-700">
-                {(() => {
-                  const routeMap = {
-                    "Roadmap": "/roadmap",
-                    "Learn & Quiz": "/learn&quiz",
-                    "Confusion Detector": "/confusion-detector",
-                    "Progress Card": "/progresscard",
-                    "Recall Card": "/recallcard",
-                  };
-
-                  return services.map((feature, idx) => {
-                    const route = routeMap[feature] || "/";
-                    return (
-                      <li key={idx}>
-                        <Link
-                          to={route}
-                          className="block px-4 py-2 hover:bg-gray-100 transition"
-                          onClick={() => setActiveDropdown(null)}
-                        >
-                          {feature}
-                        </Link>
-                      </li>
-                    );
-                  });
-                })()}
-              </ul>
+          {servicesOpen && (
+            <div className="absolute left-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+              {SERVICES.map((s) => (
+                <Link
+                  key={s.to}
+                  to={s.to}
+                  onClick={() => setServicesOpen(false)}
+                  className="block px-4 py-3 text-sm text-gray-700 font-medium hover:bg-blue-50 hover:text-primary transition"
+                >
+                  {s.label}
+                </Link>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Dashboard Button */}
+        {/* Dashboard button */}
         <Link
           to="/dashboard"
-          className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
         >
           Dashboard
         </Link>
 
-        {/* History Dropdown */}
-          <div className="relative">
-            {/* <button
-              onClick={() => toggleDropdown("history")}
-              className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-            >
-              History
-            </button> */}
-
-            {activeDropdown === "history" && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border rounded-md shadow-lg z-50">
-            <ul className="py-2 text-sm text-gray-700">
-            <li>
-            <Link
-              to="/roadmap-history"
-              className="block px-4 py-2 hover:bg-gray-100 transition"
-              onClick={() => setActiveDropdown(null)}
-              >
-              Roadmap History
-              </Link>
-            </li>
-            <li>
-            <Link
-            to="/quiz-history"
-            className="block px-4 py-2 hover:bg-gray-100 transition"
-            onClick={() => setActiveDropdown(null)}
-            >
-            Learn & Quiz History
-            </Link>
-            </li>
-            <li>
-          <Link
-            to="/progresscard-history"
-            className="block px-4 py-2 hover:bg-gray-100 transition"
-            onClick={() => setActiveDropdown(null)}
-          >
-            Progress Card History
-          </Link>
-        </li>
-        <li>
-          <Link
-            to="/recallcard-history"
-            className="block px-4 py-2 hover:bg-gray-100 transition"
-            onClick={() => setActiveDropdown(null)}
-          >
-            Recall Card History
-          </Link>
-        </li>
-        <li>
-          <Link
-            to="/confusiondetector-history"
-            className="block px-4 py-2 hover:bg-gray-100 transition"
-            onClick={() => setActiveDropdown(null)}
-          >
-            Confusion Detector History
-          </Link>
-        </li>
-      </ul>
-    </div>
-  )}
-</div>
-
-        {/* Profile Dropdown */}
-        <div className="relative">
+        {/* ── User avatar + dropdown ── */}
+        <div className="relative" ref={userRef}>
           <button
-            onClick={() => toggleDropdown("profile")}
-            className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shadow hover:bg-blue-700 transition"
+            onClick={() => setUserDropdown((v) => !v)}
+            className="w-10 h-10 rounded-full bg-primary text-white font-bold text-sm flex items-center justify-center hover:opacity-90 transition"
           >
-            U
+            {initial}
           </button>
 
-          {activeDropdown === "profile" && (
-            <div className="absolute right-0 mt-2 w-64 bg-white border rounded-xl shadow-lg z-50 p-4 text-sm text-gray-700">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#1025f9] text-white flex items-center justify-center font-bold">
-                  U
+          {userDropdown && (
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+                <div className="w-9 h-9 rounded-full bg-primary text-white font-bold text-sm flex items-center justify-center flex-shrink-0">
+                  {initial}
                 </div>
-                <div>
-                  <div className="font-semibold text-gray-900">user</div>
-                  <div className="text-xs text-gray-500">user@gmail.com</div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-800 text-sm truncate">
+                    {user?.name || "User"}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.email || ""}
+                  </p>
                 </div>
               </div>
-              <hr className="my-2" />
-              <ul className="space-y-2">
-                {/* <li className="hover:bg-gray-100 px-3 py-2 rounded cursor-pointer">
-                  View Profile
-                </li> */}
-              <li
-                className="hover:bg-gray-100 px-3 py-2 rounded cursor-pointer text-red-500 font-semibold"
-                onClick={() => {
-                  localStorage.clear();        //  clear stored tokens/session
-                  sessionStorage.clear();      //  optional
-                  window.location.href = "/";  //  redirect to landing page
-                    }}
-                >
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-3 text-sm text-red-600 font-medium hover:bg-red-50 rounded-b-xl transition"
+              >
                 Logout
-              </li>
-              </ul>
+              </button>
             </div>
           )}
         </div>
+
       </div>
     </nav>
   );

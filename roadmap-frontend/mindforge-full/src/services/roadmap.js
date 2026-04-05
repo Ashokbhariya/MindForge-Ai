@@ -28,8 +28,8 @@ const Roadmap = () => {
         try {
         setLoading(true);
         setQuizData(null);
-        const response = await api.generateQuiz(topic, 5); // Default 5 questions
-        setQuizData(response.quiz || response);
+        const response = await api.generateQuiz({ topic, count: 5 });
+        setQuizData(response.questions || []);
         } catch (error) {
         console.error("Error generating quiz:", error);
         } finally {

@@ -7,14 +7,13 @@ import Dashboard from "./pages/Dashboard";
 import Roadmap from "./pages/roadmap";
 import ConfusionDetector from "./pages/ConfusionDetector";
 import RecallCard from "./pages/recallcard";
-import ProgressCard from "./pages/progresscard";
+import ProgressCardPage from "./pages/progresscard";
 import LearnQuiz from "./pages/LearnQuiz";
 import Quiz from "./pages/quiz";
-import RoadmapHistory from "./pages/roadmap-history";
 import ConfusionDetectorHistory from "./pages/confusiondetector-history";
 import RecallCardHistory from "./pages/recallcard-history";
 import ProgressCardHistory from "./pages/progresscard-history";
-// import LearnQuizHistory from "./pages/learn&quiz"
+import RoadmapHistory from "./pages/roadmap-history";
 import QuizHistory from "./pages/quiz-history";
 import QuizPage from "./components/QuizPage";
 
@@ -29,8 +28,8 @@ export default function App() {
         <Route path="/roadmap" element={<Roadmap />} />
         <Route path="/confusion-detector" element={<ConfusionDetector />} />
         <Route path="/recallcard" element={<RecallCard />} />
-        <Route path="/progresscard" element={<ProgressCard />} />
-        <Route path="/learn&quiz" element={<LearnQuiz/>} />
+        <Route path="/progresscard" element={<ProgressCardPage />} />
+        <Route path="/learn&quiz" element={<LearnQuiz />} />
         <Route path="/quiz" element={<Quiz />} />
         <Route path="/roadmap-history" element={<RoadmapHistory />} />
         <Route path="/quiz-history" element={<QuizHistory />} />

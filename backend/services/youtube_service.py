@@ -1,6 +1,8 @@
 import os
 import requests
 from fastapi import HTTPException
+from dotenv import load_dotenv
+load_dotenv()
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
@@ -27,7 +29,7 @@ def fetch_youtube_videos(topic: str):
             "order": "relevance",
             "videoDuration": "medium" ,  # Medium length = usually educational
             "safeSearch": "strict",
-            "relevanceLanguage": "en" or "hi" #for Hindi preference
+            "relevanceLanguage": "en"
 
         }
 

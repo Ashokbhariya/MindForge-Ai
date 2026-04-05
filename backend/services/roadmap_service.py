@@ -31,9 +31,8 @@ def extract_clean_json(raw: str) -> str:
         raise Exception("No JSON object found in LLM response.")
 
     content = match.group(0).strip()
-    content = content.replace("“", '"').replace("”", '"').replace("’", "'")
-    content = content.replace('Bayes" theorem', "Bayes' theorem")
-    content = re.sub(r'([a-zA-Z])"([a-zA-Z])', r'\1\'\2', content).replace("'", '"')
+    content = content.replace("\u201c", '"').replace("\u201d", '"')
+    content = content.replace("\u2018", "'").replace("\u2019", "'")
     content = re.sub(r'\\(?!["\\/bfnrt])', r'\\\\', content)
     content = re.sub(r"\s+", " ", content)
     content = re.sub(r",\s*}", "}", content)

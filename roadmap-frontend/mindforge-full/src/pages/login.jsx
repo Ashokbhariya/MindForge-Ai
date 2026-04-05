@@ -1,41 +1,34 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; 
+import { useNavigate, Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { api } from '../services/api';
-
+import { api } from "../services/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // const handleLogin = () => {
-  //   if (email  && password ) {
-  //     localStorage.setItem("token", "dummy_token");
-  //     toast.success("Login successful!");
-
-  //     setTimeout(() => {
-  //       navigate("/dashboard");
-  //     }, 1500);
-  //   } else {
-  //     toast.error("Invalid credentials. Try again!");
-  //   }
-  // };
-
-  // 
   const handleLogin = async () => {
     if (!email || !password) {
       toast.warn("Please enter email and password");
       return;
     }
 
+    setLoading(true);
     try {
       const res = await api.login({ email, password });
-      const token = res.data.access_token;
+
+      // api.login wraps response in { data: ... }
+      const token = res?.data?.access_token;
+      const user = res?.data?.user;
 
       if (token) {
         localStorage.setItem("token", token);
+        if (user) {
+          localStorage.setItem("user", JSON.stringify(user));
+        }
         toast.success("Login successful!");
         setTimeout(() => navigate("/dashboard"), 1500);
       } else {
@@ -43,9 +36,11 @@ export default function LoginPage() {
       }
     } catch (err) {
       toast.error(err.message || "Login failed.");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary">
@@ -66,7 +61,6 @@ export default function LoginPage() {
           className="w-full mb-2 p-2 border border-border rounded"
         />
 
-        {/* Forgot Password Link */}
         <div className="text-right mb-4">
           <Link to="/forgot-password" className="text-sm text-primary hover:underline">
             Forgot Password?
@@ -75,10 +69,18 @@ export default function LoginPage() {
 
         <button
           onClick={handleLogin}
-          className="w-full bg-primary text-white py-2 rounded hover:bg-blue-600"
+          disabled={loading}
+          className="w-full bg-primary text-white py-2 rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          Sign In
+          {loading ? "Signing in..." : "Sign In"}
         </button>
+
+        <p className="text-center mt-4 text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-primary hover:underline">
+            Sign Up
+          </Link>
+        </p>
 
         <ToastContainer position="top-center" autoClose={1500} />
       </div>

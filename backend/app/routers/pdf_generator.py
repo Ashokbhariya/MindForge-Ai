@@ -1,324 +1,12 @@
-# import os
-# import re
-# import time
-# import requests
-# from fastapi import APIRouter, HTTPException
-# from pydantic import BaseModel
-# from dotenv import load_dotenv
-# from io import BytesIO
-# from xhtml2pdf import pisa
-
-# load_dotenv()
-
-# router = APIRouter(tags=["PDF Generation"])
-
-# class PDFRequest(BaseModel):
-#     topic: str
-
-# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# SUPABASE_URL = os.getenv("SUPABASE_URL")
-# SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-# PDF_OUTPUT_DIR = "generated_pdfs"
-# os.makedirs(PDF_OUTPUT_DIR, exist_ok=True)
-
-# GEMINI_MODELS = [
-#     "gemini-2.0-flash-lite",
-#     "gemini-1.5-flash",
-# ]
-
-# GEMINI_URL = (
-#     "https://generativelanguage.googleapis.com/v1beta/models/"
-#     "{model}:generateContent?key={api_key}"
-# )
-
-# PROMPT_TEMPLATE = """You are a study guide generator. Write a study guide for: {topic}
-
-# STRICT OUTPUT RULES:
-# - Output ONLY raw HTML. Absolutely nothing before or after the HTML tags.
-# - Do NOT use markdown, backticks, triple backticks, or code fences of any kind.
-# - Your first character must be < and your last character must be >
-# - Only use these HTML tags: h1, h2, p, ul, li, b, br
-# - No div, no span, no table, no class, no style attributes anywhere.
-
-# <h1>{topic}</h1>
-
-# <h2>Introduction</h2>
-# <p>Write 3-4 sentences giving a clear overview of what this topic is and why it matters.</p>
-
-# <h2>Key Concepts</h2>
-# <ul>
-# <li><b>Concept Name:</b> 2-3 sentence explanation with a simple analogy.</li>
-# <li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-# <li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-# <li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-# <li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-# </ul>
-
-# <h2>How It Works</h2>
-# <p>3-4 sentences explaining the core process or mechanism in simple terms.</p>
-
-# <h2>Real World Applications</h2>
-# <ul>
-# <li><b>Application 1:</b> Explain specifically how this topic is applied here.</li>
-# <li><b>Application 2:</b> Explain specifically how this topic is applied here.</li>
-# <li><b>Application 3:</b> Explain specifically how this topic is applied here.</li>
-# </ul>
-
-# <h2>Common Mistakes to Avoid</h2>
-# <ul>
-# <li><b>Mistake 1:</b> Why it happens and how to avoid it.</li>
-# <li><b>Mistake 2:</b> Why it happens and how to avoid it.</li>
-# </ul>
-
-# <h2>Summary</h2>
-# <p>3-4 sentences summarizing the key takeaways from this guide.</p>"""
-
-
-# def clean_llm_output(raw: str) -> str:
-#     raw = re.sub(r"```(?:html)?\s*", "", raw)
-#     raw = re.sub(r"```", "", raw)
-#     match = re.search(r"<h1", raw, re.IGNORECASE)
-#     if match:
-#         raw = raw[match.start():]
-#     return raw.strip()
-
-
-# def generate_ai_content(topic: str) -> str:
-#     if not GEMINI_API_KEY:
-#         raise Exception("GEMINI_API_KEY is not set in your .env file.")
-
-#     prompt = PROMPT_TEMPLATE.format(topic=topic)
-
-#     for model in GEMINI_MODELS:
-#         url = GEMINI_URL.format(model=model, api_key=GEMINI_API_KEY)
-#         print(f"📤 Trying Gemini model: {model}")
-
-#         for attempt in range(3):
-#             try:
-#                 response = requests.post(
-#                     url,
-#                     headers={"Content-Type": "application/json"},
-#                     json={
-#                         "contents": [{"parts": [{"text": prompt}]}],
-#                         "generationConfig": {
-#                             "temperature": 0.4,
-#                             "maxOutputTokens": 2048,
-#                         }
-#                     },
-#                     timeout=60
-#                 )
-
-#                 if response.status_code == 200:
-#                     data = response.json()
-#                     raw = data["candidates"][0]["content"]["parts"][0]["text"]
-#                     cleaned = clean_llm_output(raw)
-#                     print(f"✅ Gemini [{model}] responded successfully.")
-#                     print(f"DEBUG HTML preview: {cleaned[:200]}")
-#                     return cleaned
-
-#                 elif response.status_code == 429:
-#                     wait = [5, 8, 10][attempt]
-#                     print(f"⚠️ [{model}] Rate limited (attempt {attempt + 1}/3). Waiting {wait}s...")
-#                     time.sleep(wait)
-#                     continue
-
-#                 elif response.status_code == 404:
-#                     print(f"⚠️ [{model}] not found, trying next model...")
-#                     break
-
-#                 else:
-#                     print(f"❌ [{model}] error {response.status_code}: {response.text[:200]}")
-#                     break
-
-#             except requests.exceptions.RequestException as e:
-#                 print(f"⚠️ Request error with [{model}]: {e}")
-#                 break
-
-#     print(print("❌ All Gemini models failed. Using rich static fallback content.")
-#     return f"""<h1>{topic}</h1>
-
-# <h2>Introduction</h2>
-# <p>
-# This study guide covers the topic of <b>{topic}</b>. Whether you are a beginner just
-# starting out or an intermediate learner looking to consolidate your knowledge, this guide
-# provides a structured overview of the key ideas, practical uses, and important concepts
-# you need to understand.
-# </p>
-# <p>
-# Note: AI-generated content was temporarily unavailable due to API rate limits.
-# This guide contains foundational information. For deeper content, please try generating
-# again in a minute.
-# </p>
-
-# <h2>What You Will Learn</h2>
-# <ul>
-# <li><b>Core Definitions:</b> Understand what {topic} means and where it fits in the broader landscape.</li>
-# <li><b>Key Principles:</b> Learn the fundamental rules and ideas that govern this subject.</li>
-# <li><b>Practical Applications:</b> Discover how {topic} is used in the real world.</li>
-# <li><b>Common Pitfalls:</b> Identify mistakes beginners make and how to avoid them.</li>
-# <li><b>Next Steps:</b> Know what to study after mastering the basics of {topic}.</li>
-# </ul>
-
-# <h2>Why This Topic Matters</h2>
-# <p>
-# Understanding <b>{topic}</b> is valuable because it builds foundational skills that apply
-# across many domains. Professionals who master this area are better equipped to solve
-# complex problems, communicate ideas clearly, and contribute meaningfully to their field.
-# </p>
-# <p>
-# Whether you are studying for an exam, preparing for a job interview, or simply expanding
-# your knowledge, a solid understanding of {topic} will give you a competitive edge.
-# </p>
-
-# <h2>How To Study This Topic Effectively</h2>
-# <ul>
-# <li><b>Start with the basics:</b> Make sure you understand the foundational definitions before moving on.</li>
-# <li><b>Practice regularly:</b> Apply what you learn through exercises, projects, or real-world examples.</li>
-# <li><b>Use multiple resources:</b> Combine textbooks, videos, and hands-on practice for best results.</li>
-# <li><b>Test yourself:</b> Use quizzes and flashcards to reinforce memory and identify weak areas.</li>
-# <li><b>Teach others:</b> Explaining a concept to someone else is one of the best ways to solidify your own understanding.</li>
-# </ul>
-
-# <h2>Recommended Next Steps</h2>
-# <p>
-# To go deeper on <b>{topic}</b>, consider exploring the following:
-# </p>
-# <ul>
-# <li>Search for "{topic} tutorial" on YouTube for free video lessons.</li>
-# <li>Look up "{topic}" on Wikipedia for a comprehensive overview and references.</li>
-# <li>Find practice problems or projects related to {topic} on platforms like Coursera, Khan Academy, or freeCodeCamp.</li>
-# <li>Join a community or forum where practitioners of {topic} share knowledge and answer questions.</li>
-# </ul>
-
-# <h2>Summary</h2>
-# <p>
-# <b>{topic}</b> is an important subject that rewards structured study and consistent practice.
-# By understanding its core concepts, exploring its real-world applications, and avoiding
-# common mistakes, you will be well on your way to mastering this area.
-# </p>
-# <p>
-# Return to this guide after generating AI content for a richer, fully personalized
-# study experience tailored specifically to <b>{topic}</b>.
-# </p>""")
-#     return f"""<h1>{topic}</h1>
-# <h2>About This Topic</h2>
-# <p>This study guide covers <b>{topic}</b>. AI content generation is temporarily unavailable due to API rate limits. Please try again in a few minutes.</p>
-# <h2>What To Do Next</h2>
-# <ul>
-# <li><b>Try again shortly:</b> Gemini free tier allows 15 requests per minute. Wait 60 seconds and retry.</li>
-# <li><b>Search online:</b> Look up "{topic}" on Wikipedia or YouTube for learning resources.</li>
-# <li><b>Check your API quota:</b> Visit aistudio.google.com to monitor your usage.</li>
-# </ul>"""
-
-
-# def build_full_html(body_html: str) -> str:
-#     return f"""<!DOCTYPE html>
-# <html>
-# <head>
-# <meta charset="UTF-8"/>
-# <style>
-#   @page {{ margin: 2cm; }}
-#   body {{
-#     font-family: Helvetica, Arial, sans-serif;
-#     font-size: 11pt;
-#     color: #1a1a1a;
-#     line-height: 1.7;
-#   }}
-#   h1 {{
-#     font-size: 22pt;
-#     color: #0d1b2a;
-#     border-bottom: 2px solid #0d1b2a;
-#     padding-bottom: 6px;
-#     margin-bottom: 16px;
-#   }}
-#   h2 {{
-#     font-size: 14pt;
-#     color: #1b4332;
-#     margin-top: 20px;
-#     margin-bottom: 8px;
-#     border-left: 4px solid #1b4332;
-#     padding-left: 8px;
-#   }}
-#   p {{ margin: 6px 0 12px 0; }}
-#   ul {{ margin: 6px 0 12px 18px; padding: 0; }}
-#   li {{ margin-bottom: 6px; }}
-#   b {{ font-weight: bold; color: #0d1b2a; }}
-# </style>
-# </head>
-# <body>
-# {body_html}
-# </body>
-# </html>"""
-
-
-# def convert_html_to_pdf_in_memory(html: str) -> BytesIO:
-#     pdf_buffer = BytesIO()
-#     pisa_status = pisa.CreatePDF(html, dest=pdf_buffer)
-#     if pisa_status.err:
-#         raise Exception(f"xhtml2pdf failed with {pisa_status.err} error(s).")
-#     pdf_buffer.seek(0)
-#     size = len(pdf_buffer.getvalue())
-#     print(f"DEBUG PDF size: {size} bytes")
-#     if size < 500:
-#         raise Exception(f"PDF appears empty ({size} bytes).")
-#     return pdf_buffer
-
-
-# def save_pdf_locally(pdf_buffer: BytesIO, topic: str) -> str:
-#     safe_topic = topic.replace(' ', '_').replace('/', '-')
-#     filename = f"{safe_topic}_{os.urandom(4).hex()}.pdf"
-#     filepath = os.path.join(PDF_OUTPUT_DIR, filename)
-#     with open(filepath, "wb") as f:
-#         f.write(pdf_buffer.getvalue())
-#     print(f"✅ PDF saved locally: {filepath}")
-#     return f"/generated_pdfs/{filename}"
-
-
-# def upload_to_supabase(pdf_buffer: BytesIO, topic: str):
-#     try:
-#         from supabase import create_client
-#         if not SUPABASE_URL or not SUPABASE_KEY:
-#             raise ValueError("Supabase credentials not configured")
-#         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-#         safe_topic = topic.replace(' ', '_')
-#         storage_path = f"resources/{safe_topic}/{safe_topic}_{os.urandom(4).hex()}.pdf"
-#         supabase.storage.from_("pdf-bucket").upload(
-#             storage_path, pdf_buffer.getvalue(), {'content-type': 'application/pdf'}
-#         )
-#         return supabase.storage.from_("pdf-bucket").get_public_url(storage_path)
-#     except Exception as e:
-#         print(f"⚠️ Supabase upload failed: {e} — saving locally instead")
-#         return None
-
-
-# @router.post("/generate-pdf/")
-# async def generate_resource_pdf(data: PDFRequest):
-#     if not data.topic.strip():
-#         raise HTTPException(status_code=400, detail="Topic cannot be empty.")
-#     try:
-#         body_html = generate_ai_content(data.topic)
-#         full_html = build_full_html(body_html)
-#         pdf_buffer = convert_html_to_pdf_in_memory(full_html)
-
-#         pdf_url = upload_to_supabase(pdf_buffer, data.topic)
-#         if not pdf_url:
-#             pdf_buffer.seek(0)
-#             pdf_url = save_pdf_locally(pdf_buffer, data.topic)
-
-#         return {"topic": data.topic, "pdf_url": pdf_url}
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 import os
 import re
-import time
+from io import BytesIO
+from fpdf import FPDF
 import requests
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from io import BytesIO
-from xhtml2pdf import pisa
 
 load_dotenv()
 
@@ -327,277 +15,179 @@ router = APIRouter(tags=["PDF Generation"])
 class PDFRequest(BaseModel):
     topic: str
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# Use the same Groq key that's already working for quiz/recall cards
+GROQ_API_KEY = os.getenv("API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL   = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 PDF_OUTPUT_DIR = "generated_pdfs"
 os.makedirs(PDF_OUTPUT_DIR, exist_ok=True)
 
-GEMINI_MODELS = [
-    "gemini-2.0-flash-lite",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash-latest",
-]
 
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "{model}:generateContent?key={api_key}"
-)
+# ── Step 1: Generate study guide text via Groq ────────────────────────────────
+def generate_study_content(topic: str) -> str:
+    key = GROQ_API_KEY or os.environ.get("API_KEY") or os.environ.get("GROQ_API_KEY")
+    if not key:
+        return _fallback_content(topic)
 
-PROMPT_TEMPLATE = """You are a study guide generator. Write a study guide for: {topic}
+    prompt = (
+        f"Write a comprehensive study guide for: {topic}\n\n"
+        f"Structure it with these exact section headers (use === before each):\n"
+        f"=== Introduction\n"
+        f"=== Key Concepts\n"
+        f"=== How It Works\n"
+        f"=== Real-World Applications\n"
+        f"=== Common Mistakes to Avoid\n"
+        f"=== Summary\n\n"
+        f"Rules:\n"
+        f"- Plain text only. No markdown, no asterisks, no bullet dashes.\n"
+        f"- Use numbered lists like: 1. item\n"
+        f"- Keep each section 3-5 sentences or 4-6 list items.\n"
+        f"- Be clear and beginner-friendly."
+    )
 
-STRICT OUTPUT RULES:
-- Output ONLY raw HTML. Absolutely nothing before or after the HTML tags.
-- Do NOT use markdown, backticks, triple backticks, or code fences of any kind.
-- Your first character must be < and your last character must be >
-- Only use these HTML tags: h1, h2, p, ul, li, b, br
-- No div, no span, no table, no class, no style attributes anywhere.
-
-<h1>{topic}</h1>
-
-<h2>Introduction</h2>
-<p>Write 3-4 sentences giving a clear overview of what this topic is and why it matters.</p>
-
-<h2>Key Concepts</h2>
-<ul>
-<li><b>Concept Name:</b> 2-3 sentence explanation with a simple analogy.</li>
-<li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-<li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-<li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-<li><b>Concept Name:</b> 2-3 sentence explanation.</li>
-</ul>
-
-<h2>How It Works</h2>
-<p>3-4 sentences explaining the core process or mechanism in simple terms.</p>
-
-<h2>Real World Applications</h2>
-<ul>
-<li><b>Application 1:</b> Explain specifically how this topic is applied here.</li>
-<li><b>Application 2:</b> Explain specifically how this topic is applied here.</li>
-<li><b>Application 3:</b> Explain specifically how this topic is applied here.</li>
-</ul>
-
-<h2>Common Mistakes to Avoid</h2>
-<ul>
-<li><b>Mistake 1:</b> Why it happens and how to avoid it.</li>
-<li><b>Mistake 2:</b> Why it happens and how to avoid it.</li>
-</ul>
-
-<h2>Summary</h2>
-<p>3-4 sentences summarizing the key takeaways from this guide.</p>"""
-
-
-def clean_llm_output(raw: str) -> str:
-    raw = re.sub(r"```(?:html)?\s*", "", raw)
-    raw = re.sub(r"```", "", raw)
-    match = re.search(r"<h1", raw, re.IGNORECASE)
-    if match:
-        raw = raw[match.start():]
-    return raw.strip()
-
-
-def generate_ai_content(topic: str) -> str:
-    if not GEMINI_API_KEY:
-        raise Exception("GEMINI_API_KEY is not set in your .env file.")
-
-    prompt = PROMPT_TEMPLATE.format(topic=topic)
-
-    for model in GEMINI_MODELS:
-        url = GEMINI_URL.format(model=model, api_key=GEMINI_API_KEY)
-        print(f"📤 Trying Gemini model: {model}")
-
-        for attempt in range(3):
-            try:
-                response = requests.post(
-                    url,
-                    headers={"Content-Type": "application/json"},
-                    json={
-                        "contents": [{"parts": [{"text": prompt}]}],
-                        "generationConfig": {
-                            "temperature": 0.4,
-                            "maxOutputTokens": 2048,
-                        }
-                    },
-                    timeout=60
-                )
-
-                if response.status_code == 200:
-                    data = response.json()
-                    raw = data["candidates"][0]["content"]["parts"][0]["text"]
-                    cleaned = clean_llm_output(raw)
-                    print(f"✅ Gemini [{model}] responded successfully.")
-                    print(f"DEBUG HTML preview: {cleaned[:200]}")
-                    return cleaned
-
-                elif response.status_code == 429:
-                    wait = [3, 8, 15][attempt]
-                    print(f"⚠️ [{model}] Rate limited (attempt {attempt + 1}/3). Waiting {wait}s...")
-                    time.sleep(wait)
-                    continue
-
-                elif response.status_code == 404:
-                    print(f"⚠️ [{model}] not found, trying next model...")
-                    break
-
-                else:
-                    print(f"❌ [{model}] error {response.status_code}: {response.text[:200]}")
-                    break
-
-            except requests.exceptions.RequestException as e:
-                print(f"⚠️ Request error with [{model}]: {e}")
-                break
-
-    # ✅ Rich fallback — always produces a readable PDF even when Gemini is unavailable
-    print("❌ All Gemini models failed. Using rich static fallback content.")
-    return f"""<h1>{topic}</h1>
-
-<h2>Introduction</h2>
-<p>This study guide covers the topic of <b>{topic}</b>. Whether you are a beginner just
-starting out or an intermediate learner looking to consolidate your knowledge, this guide
-provides a structured overview of the key ideas, practical uses, and important concepts
-you need to understand.</p>
-<p>Note: AI-generated content was temporarily unavailable due to API rate limits.
-This guide contains foundational information. For deeper AI-generated content, please
-try generating again in a minute.</p>
-
-<h2>What You Will Learn</h2>
-<ul>
-<li><b>Core Definitions:</b> Understand what {topic} means and where it fits in the broader landscape.</li>
-<li><b>Key Principles:</b> Learn the fundamental rules and ideas that govern this subject.</li>
-<li><b>Practical Applications:</b> Discover how {topic} is used in the real world.</li>
-<li><b>Common Pitfalls:</b> Identify mistakes beginners make and how to avoid them.</li>
-<li><b>Next Steps:</b> Know what to study after mastering the basics of {topic}.</li>
-</ul>
-
-<h2>Why This Topic Matters</h2>
-<p>Understanding <b>{topic}</b> is valuable because it builds foundational skills that apply
-across many domains. Professionals who master this area are better equipped to solve
-complex problems, communicate ideas clearly, and contribute meaningfully to their field.</p>
-<p>Whether you are studying for an exam, preparing for a job interview, or simply expanding
-your knowledge, a solid grasp of {topic} will give you a competitive edge.</p>
-
-<h2>How To Study This Topic Effectively</h2>
-<ul>
-<li><b>Start with the basics:</b> Make sure you understand foundational definitions before moving on.</li>
-<li><b>Practice regularly:</b> Apply what you learn through exercises, projects, or real-world examples.</li>
-<li><b>Use multiple resources:</b> Combine textbooks, videos, and hands-on practice for best results.</li>
-<li><b>Test yourself:</b> Use quizzes and flashcards to reinforce memory and identify weak areas.</li>
-<li><b>Teach others:</b> Explaining a concept to someone else is one of the best ways to solidify understanding.</li>
-</ul>
-
-<h2>Recommended Next Steps</h2>
-<p>To go deeper on <b>{topic}</b>, consider exploring the following:</p>
-<ul>
-<li>Search for <b>{topic} tutorial</b> on YouTube for free video lessons.</li>
-<li>Look up <b>{topic}</b> on Wikipedia for a comprehensive overview and references.</li>
-<li>Find practice problems on platforms like Coursera, Khan Academy, or freeCodeCamp.</li>
-<li>Join a community or forum where practitioners of {topic} share knowledge.</li>
-</ul>
-
-<h2>Summary</h2>
-<p><b>{topic}</b> is an important subject that rewards structured study and consistent practice.
-By understanding its core concepts, exploring its real-world applications, and avoiding
-common mistakes, you will be well on your way to mastering this area.</p>
-<p>Return to this guide after generating AI content for a richer, fully personalized
-study experience tailored specifically to <b>{topic}</b>.</p>"""
-
-
-def build_full_html(body_html: str) -> str:
-    return f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
-<style>
-  @page {{ margin: 2cm; }}
-  body {{
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 11pt;
-    color: #1a1a1a;
-    line-height: 1.7;
-  }}
-  h1 {{
-    font-size: 22pt;
-    color: #0d1b2a;
-    border-bottom: 2px solid #0d1b2a;
-    padding-bottom: 6px;
-    margin-bottom: 16px;
-  }}
-  h2 {{
-    font-size: 14pt;
-    color: #1b4332;
-    margin-top: 20px;
-    margin-bottom: 8px;
-    border-left: 4px solid #1b4332;
-    padding-left: 8px;
-  }}
-  p {{ margin: 6px 0 12px 0; }}
-  ul {{ margin: 6px 0 12px 18px; padding: 0; }}
-  li {{ margin-bottom: 6px; }}
-  b {{ font-weight: bold; color: #0d1b2a; }}
-</style>
-</head>
-<body>
-{body_html}
-</body>
-</html>"""
-
-
-def convert_html_to_pdf_in_memory(html: str) -> BytesIO:
-    pdf_buffer = BytesIO()
-    pisa_status = pisa.CreatePDF(html, dest=pdf_buffer)
-    if pisa_status.err:
-        raise Exception(f"xhtml2pdf failed with {pisa_status.err} error(s).")
-    pdf_buffer.seek(0)
-    size = len(pdf_buffer.getvalue())
-    print(f"DEBUG PDF size: {size} bytes")
-    if size < 500:
-        raise Exception(f"PDF appears empty ({size} bytes).")
-    return pdf_buffer
-
-
-def save_pdf_locally(pdf_buffer: BytesIO, topic: str) -> str:
-    safe_topic = topic.replace(' ', '_').replace('/', '-')
-    filename = f"{safe_topic}_{os.urandom(4).hex()}.pdf"
-    filepath = os.path.join(PDF_OUTPUT_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(pdf_buffer.getvalue())
-    print(f"✅ PDF saved locally: {filepath}")
-    return f"/generated_pdfs/{filename}"
-
-
-def upload_to_supabase(pdf_buffer: BytesIO, topic: str):
     try:
-        from supabase import create_client
-        if not SUPABASE_URL or not SUPABASE_KEY:
-            raise ValueError("Supabase credentials not configured")
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        safe_topic = topic.replace(' ', '_')
-        storage_path = f"resources/{safe_topic}/{safe_topic}_{os.urandom(4).hex()}.pdf"
-        supabase.storage.from_("pdf-bucket").upload(
-            storage_path, pdf_buffer.getvalue(), {'content-type': 'application/pdf'}
+        response = requests.post(
+            GROQ_API_URL,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1200,
+                "temperature": 0.6,
+            },
+            timeout=30,
         )
-        return supabase.storage.from_("pdf-bucket").get_public_url(storage_path)
+        if response.status_code == 200:
+            content = response.json()["choices"][0]["message"]["content"].strip()
+            print(f"[Groq PDF] Content generated ({len(content)} chars)")
+            return content
+        else:
+            print(f"[Groq PDF] Error {response.status_code}: {response.text[:200]}")
+            return _fallback_content(topic)
     except Exception as e:
-        print(f"⚠️ Supabase upload failed: {e} — saving locally instead")
-        return None
+        print(f"[Groq PDF] Exception: {e}")
+        return _fallback_content(topic)
 
 
+def _fallback_content(topic: str) -> str:
+    return (
+        f"=== Introduction\n"
+        f"This study guide covers {topic}. It is designed to give you a solid "
+        f"foundational understanding of the subject, its core ideas, and practical uses.\n\n"
+        f"=== Key Concepts\n"
+        f"1. Definition: Understand what {topic} means.\n"
+        f"2. Principles: Learn the fundamental rules that govern this subject.\n"
+        f"3. Tools: Identify the main tools or frameworks used.\n"
+        f"4. Best Practices: Follow proven approaches to work effectively.\n\n"
+        f"=== How It Works\n"
+        f"{topic} operates through a structured set of principles and processes. "
+        f"Understanding the flow of these processes is key to mastering the subject.\n\n"
+        f"=== Real-World Applications\n"
+        f"1. Industry Use: {topic} is widely applied across many professional domains.\n"
+        f"2. Problem Solving: It helps solve complex, real-world challenges efficiently.\n"
+        f"3. Career Value: Mastery of {topic} is a valued skill in the job market.\n\n"
+        f"=== Common Mistakes to Avoid\n"
+        f"1. Skipping fundamentals before advanced topics.\n"
+        f"2. Not practicing with real examples and projects.\n"
+        f"3. Ignoring edge cases and exceptions in the subject.\n\n"
+        f"=== Summary\n"
+        f"{topic} is an important subject worth mastering. Start with the basics, "
+        f"practice consistently, and build on your knowledge progressively."
+    )
+
+
+# ── Step 2: Build PDF using fpdf2 ─────────────────────────────────────────────
+class StudyGuidePDF(FPDF):
+    def __init__(self, topic: str):
+        super().__init__()
+        self.topic = topic
+
+    def header(self):
+        self.set_fill_color(16, 37, 249)   # Brand blue #1025f9
+        self.rect(0, 0, 210, 18, 'F')
+        self.set_font("Helvetica", "B", 13)
+        self.set_text_color(255, 255, 255)
+        self.set_y(4)
+        self.cell(0, 10, f"Study Guide: {self.topic}", align="C")
+        self.set_text_color(0, 0, 0)
+        self.ln(14)
+
+    def footer(self):
+        self.set_y(-12)
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(150, 150, 150)
+        self.cell(0, 10, f"MindForgeAI  |  Page {self.page_no()}", align="C")
+
+
+def build_pdf(topic: str, content: str) -> str:
+    pdf = StudyGuidePDF(topic)
+    pdf.set_auto_page_break(auto=True, margin=18)
+    pdf.add_page()
+
+    sections = re.split(r"===\s*", content)
+
+    for section in sections:
+        section = section.strip()
+        if not section:
+            continue
+
+        lines = section.split("\n", 1)
+        title = lines[0].strip()
+        body  = lines[1].strip() if len(lines) > 1 else ""
+
+        # Section header bar
+        pdf.set_fill_color(230, 235, 255)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(16, 37, 249)
+        pdf.cell(0, 9, title, fill=True, ln=True)
+        pdf.ln(2)
+
+        # Body text
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(30, 30, 30)
+
+        for line in body.split("\n"):
+            line = line.strip()
+            if not line:
+                pdf.ln(3)
+                continue
+
+            # Numbered list item
+            if re.match(r"^\d+\.\s", line):
+                num, rest = line.split(".", 1)
+                pdf.set_x(14)
+                pdf.set_font("Helvetica", "B", 10)
+                pdf.cell(6, 6, f"{num}.", ln=False)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.multi_cell(0, 6, rest.strip())
+            else:
+                pdf.multi_cell(0, 6, line)
+
+        pdf.ln(5)
+
+    safe_topic = topic.replace(" ", "_").replace("/", "-")
+    filename   = f"{safe_topic}_{os.urandom(4).hex()}.pdf"
+    filepath   = os.path.join(PDF_OUTPUT_DIR, filename)
+    pdf.output(filepath)
+    print(f"[PDF] Saved: {filepath} ({os.path.getsize(filepath)} bytes)")
+    return filepath
+
+
+# ── Route ─────────────────────────────────────────────────────────────────────
 @router.post("/generate-pdf/")
 async def generate_resource_pdf(data: PDFRequest):
     if not data.topic.strip():
         raise HTTPException(status_code=400, detail="Topic cannot be empty.")
     try:
-        body_html = generate_ai_content(data.topic)
-        full_html = build_full_html(body_html)
-        pdf_buffer = convert_html_to_pdf_in_memory(full_html)
+        content  = generate_study_content(data.topic)
+        filepath = build_pdf(data.topic, content)
 
-        pdf_url = upload_to_supabase(pdf_buffer, data.topic)
-        if not pdf_url:
-            pdf_buffer.seek(0)
-            pdf_url = save_pdf_locally(pdf_buffer, data.topic)
-
+        # Return a local URL the frontend can load in the iframe
+        filename = os.path.basename(filepath)
+        pdf_url  = f"http://127.0.0.1:8000/generated_pdfs/{filename}"
         return {"topic": data.topic, "pdf_url": pdf_url}
 
     except Exception as e:
+        print(f"[PDF] Generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")

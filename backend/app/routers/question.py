@@ -11,8 +11,7 @@ from services.confusion_service import get_confusion_summary
 import os
 import json
 import requests
-import pdfkit
-from fastapi.responses import FileResponse
+
 
 router = APIRouter(tags=["Questions & Quiz"])
 

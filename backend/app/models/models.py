@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, DateTime, String, Text, Float, Boolean, Integer, TIMESTAMP, ForeignKey, ARRAY , JSON
+from sqlalchemy import Column, DateTime, String, Text, Float, Boolean, Integer, TIMESTAMP, ForeignKey, ARRAY, JSON
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from app.database import Base
@@ -7,16 +7,15 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 
-recommended_pathway = Column(JSONB)
-
 class User(Base):
     __tablename__ = "users"
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String)
-    email = Column(String, unique=True, nullable=False)
-    password_hash = Column(Text, nullable=False)
-    career_goal = Column(Text)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    career_goal = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class SkillScanResult(Base):
@@ -26,6 +25,7 @@ class SkillScanResult(Base):
     career_goal = Column(Text, nullable=False)
     recommended_pathway = Column(JSONB, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
 
 class LearningSession(Base):
     __tablename__ = "learning_sessions"
@@ -38,6 +38,7 @@ class LearningSession(Base):
     interaction_pattern = Column(JSONB, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
+
 class ConfusionSignal(Base):
     __tablename__ = "confusion_signals"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -46,6 +47,7 @@ class ConfusionSignal(Base):
     question_id = Column(UUID(as_uuid=True))
     confusion_score = Column(Float)
     ai_feedback = Column(Text)
+    message = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
@@ -71,6 +73,7 @@ class KnowledgeDecayEvent(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
+
 class Question(Base):
     __tablename__ = "questions"
 
@@ -88,9 +91,10 @@ class LearningStyle(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    dominant_style = Column(String, nullable=False)  # e.g., 'visual', 'auditory', 'reading/writing', 'kinesthetic'
-    style_scores = Column(JSONB)  # optional: store confidence per style (e.g., {'visual': 0.8, 'auditory': 0.6})
+    dominant_style = Column(String, nullable=False)
+    style_scores = Column(JSONB)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+
 
 class Roadmap(Base):
     __tablename__ = "roadmaps"
@@ -99,13 +103,15 @@ class Roadmap(Base):
     topic = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     level = Column(String, nullable=True, default="beginner")
+    # ✅ ADDED: created_at for proper history sorting
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     subtopics = relationship("SubTopic", back_populates="roadmap", cascade="all, delete")
 
 
 class SubTopic(Base):
     __tablename__ = "subtopics"
     __table_args__ = {'extend_existing': True}
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     roadmap_id = Column(UUID(as_uuid=True), ForeignKey("roadmaps.id"), nullable=False)
     title = Column(String, nullable=False)
@@ -113,27 +119,14 @@ class SubTopic(Base):
     roadmap = relationship("Roadmap", back_populates="subtopics")
 
 
-# class QuizAnswer(Base):
-#     __tablename__ = "quiz_answers"
-
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     user_id = Column(UUID(as_uuid=True), nullable=False)
-#     question = Column(Text)
-#     selected = Column(Text)
-#     correct = Column(Text)
-#     topic = Column(String)
-#     is_correct = Column(Boolean)
-#     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-
 class QuizResult(Base):
     __tablename__ = "quiz_results"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=True)
     topic = Column(String, nullable=False)
     score = Column(Integer)
     total_questions = Column(Integer)
-    timestamp = Column(TIMESTAMP(timezone=False), server_default=func.now()) 
+    timestamp = Column(TIMESTAMP(timezone=False), server_default=func.now())
 
 
 class Quiz(Base):
@@ -141,7 +134,7 @@ class Quiz(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     topic = Column(String, nullable=False)
-    questions = Column(JSON, nullable=False)  # List of questions (store as JSON)
+    questions = Column(JSON, nullable=False)
 
 
 class QuizAttempt(Base):
@@ -149,5 +142,6 @@ class QuizAttempt(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     topic = Column(String, nullable=False)
-    selected_answers = Column(JSON, nullable=False)  # e.g., {"0": "A", "1": "B"}
+    selected_answers = Column(JSON, nullable=False)
+    user_id = Column(String, nullable=True) 
     submitted_at = Column(DateTime, default=datetime.utcnow)

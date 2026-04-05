@@ -5,7 +5,7 @@ from app.crud import learning_style as learning_style_crud  # <- renamed import
 from app.database import get_db
 from uuid import UUID
 
-router = APIRouter(prefix="/learning-style", tags=["Learning Style"])
+router = APIRouter(tags=["Learning Style"])
 
 @router.post("/", response_model=LearningStyleOut)
 def create_learning_style(

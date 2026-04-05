@@ -2,23 +2,39 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/DashNav";
 import Footer from "../components/Footer";
-import { api } from "../services/api";
-import score from "../components/QuizPage"
+
+const BASE_URL = "http://127.0.0.1:8000";
+
+const getUserId = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return user.id || user.user_id || null;
+  } catch {
+    return null;
+  }
+};
 
 export default function ConfusionDetector() {
   const location = useLocation();
-  const weakTopicsFromQuiz = location.state?.weakTopics || [];
-  const scoreFromQuiz = location.state?.score ?? null;
+  const weakTopicsFromQuiz = location.state?.weakTopics  || [];
+  const scoreFromQuiz      = location.state?.score       ?? null;
+  const totalFromQuiz      = location.state?.total       ?? null;
+  const percentageFromQuiz = location.state?.percentage  ?? null;
 
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(false);
-  const userId = "b7032f09-3851-488e-a6ce-1cb0230f1454"; // test user
 
   useEffect(() => {
+    const userId = getUserId();
+    if (!userId) return;
     setLoading(true);
-    api
-      .getConfusionSignals(userId)
-      .then((data) => setSignals(data))
+
+    // FIX: Use /api/quiz/confusion-topics which is where the backend
+    // now saves confusion signals after every quiz submission.
+    // The old /confusion-signals/{userId} endpoint uses different data.
+    fetch(`${BASE_URL}/api/quiz/confusion-topics?user_id=${userId}`)
+      .then((res) => res.json())
+      .then((data) => setSignals(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Error fetching confusion signals:", err))
       .finally(() => setLoading(false));
   }, []);
@@ -34,31 +50,38 @@ export default function ConfusionDetector() {
           Confusion Detector
         </h2>
 
-        {/* Feedback from quiz weakTopics (formatted) */}
+        {scoreFromQuiz !== null && (
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded text-blue-900 mb-6 text-center">
+            <p className="text-xl font-bold">
+              Your Score: {scoreFromQuiz}
+              {totalFromQuiz      !== null ? ` / ${totalFromQuiz}`                   : ""}
+              {percentageFromQuiz !== null ? ` (${Math.round(percentageFromQuiz)}%)` : ""}
+            </p>
+          </div>
+        )}
+
         {uniqueTopics.length > 0 && (
           <div className="bg-yellow-100 border border-yellow-300 p-4 rounded text-yellow-800 mb-6">
-            <p className="font-semibold mb-2">You're struggling with:</p>
+            <p className="font-semibold mb-2">You are struggling with:</p>
             <ul className="list-disc list-inside">
               {uniqueTopics.map((topic, idx) => (
                 <li key={idx}>{topic}</li>
               ))}
             </ul>
-            <p className="mt-2">Your Score: {scoreFromQuiz}</p>
-            <p className="mt-2">Let’s work on them.</p>
+            <p className="mt-2">Let us work on them.</p>
           </div>
         )}
 
-        {/* API Signals */}
         {loading ? (
           <p className="text-center text-gray-600">Loading confusion signals...</p>
         ) : signals.length > 0 ? (
           <ul className="bg-white p-6 rounded-xl shadow-lg space-y-2">
-            {signals.map((sig) => (
-              <li
-                key={sig.id}
-                className="border-b last:border-none py-2 text-gray-800"
-              >
-                {sig.message || "Confusion signal detected"}
+            {signals.map((sig, idx) => (
+              <li key={idx} className="border-b last:border-none py-3 text-gray-800">
+                <span className="font-semibold text-red-600">{sig.topic}</span>
+                {sig.message && (
+                  <p className="text-sm text-gray-600 mt-1">{sig.message}</p>
+                )}
               </li>
             ))}
           </ul>

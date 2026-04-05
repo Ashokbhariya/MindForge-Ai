@@ -6,7 +6,7 @@ from app.database import get_db
 from uuid import UUID
 from typing import List
 
-router = APIRouter(prefix="/knowledge-decay", tags=["Knowledge Decay"])
+router = APIRouter(tags=["Knowledge Decay"])
 
 @router.post("/", response_model=KnowledgeDecayOut)
 def create_decay(data: KnowledgeDecayCreate, db: Session = Depends(get_db)):

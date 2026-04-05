@@ -3,16 +3,34 @@ import Navbar from "../components/DashNav";
 import Footer from "../components/Footer";
 import { api } from "../services/api";
 
-
 export default function ConfusionDetectorHistory() {
   const [confusions, setConfusions] = useState([]);
-  const userId = "b7032f09-3851-488e-a6ce-1cb0230f1454"; // test user
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+
+  const userId = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}").id || null;
+    } catch {
+      return null;
+    }
+  })();
 
   useEffect(() => {
-    api.getConfusionSignals(userId)
-      .then((data) => setConfusions(data))
-      .catch((err) => console.error("Confusion history error:", err));
-  }, []);
+    if (!userId) {
+      setError("No user found. Please log in.");
+      return;
+    }
+    setLoading(true);
+    api
+      .getConfusionSignals(userId)
+      .then((data) => setConfusions(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error("Confusion history error:", err);
+        setError("Failed to load confusion history.");
+      })
+      .finally(() => setLoading(false));
+  }, [userId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary to-white flex flex-col">
@@ -21,18 +39,25 @@ export default function ConfusionDetectorHistory() {
         <h2 className="text-3xl font-bold text-primary mb-6 text-center">
           Confusion Detector History
         </h2>
-        {confusions.length > 0 ? (
-          confusions.map((item) => (
-            <div key={item.id} className="bg-white p-4 rounded-xl shadow mb-4">
-              <h4 className="text-sm font-semibold text-gray-600 mb-2">
-                Topic: {item.topic || "N/A"}
-              </h4>
-              <p className="text-gray-800">{item.message || "Confusion signal detected"}</p>
-            </div>
-          ))
-        ) : (
+
+        {loading && <p className="text-center text-gray-600">Loading...</p>}
+
+        {!loading && error && (
+          <p className="text-center text-red-500">{error}</p>
+        )}
+
+        {!loading && !error && confusions.length === 0 && (
           <p className="text-center text-gray-600">No confusion history found.</p>
         )}
+
+        {!loading && !error && confusions.map((item, idx) => (
+          <div key={item.id || idx} className="bg-white p-4 rounded-xl shadow mb-4">
+            <h4 className="text-sm font-semibold text-gray-600 mb-2">
+              Topic: {item.topic || "N/A"}
+            </h4>
+            <p className="text-gray-800">{item.message || "Confusion signal detected"}</p>
+          </div>
+        ))}
       </main>
       <Footer />
     </div>

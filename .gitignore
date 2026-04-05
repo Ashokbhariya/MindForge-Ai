@@ -27,4 +27,17 @@ desktop.ini
 # Logs
 *.log
 
+# Media
 *.mp4
+
+# Generated files
+generated_pdfs/
+*.pdf
+
+# Random accidental files/folders
+cd
+
+# Environment variables
+.env
+.env.*
+*.env

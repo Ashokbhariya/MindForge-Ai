@@ -7,7 +7,7 @@ export default function Sidebar() {
       <nav className="flex flex-col space-y-4">
         <Link to="/dashboard" className="hover:text-primary">Home</Link>
         <Link to="/skillscan" className="hover:text-primary">SkillScan</Link>
-        <Link to="/confusion" className="hover:text-primary">Confusion Detector</Link>
+        {/* <Link to="/confusion" className="hover:text-primary">Confusion Detector</Link> */}
         <Link to="/concept-cards" className="hover:text-primary">Concept Cards</Link>
         <Link to="/knowledge-decay" className="hover:text-primary">Knowledge Tracker</Link>
         {/* <Link to="/admin" className="hover:text-primary">Admin Panel</Link> */}
