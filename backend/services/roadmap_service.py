@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy.orm import Session
 from app.models import Roadmap, SubTopic
 from dotenv import load_dotenv
-from services.qdrant_service import insert_roadmap, insert_user_roadmap, init_qdrant_collection, embedding_model
+from services.qdrant_service import insert_roadmap, insert_user_roadmap, init_qdrant_collection, get_embedding
 
 # Load environment variables
 load_dotenv()
@@ -128,7 +128,7 @@ def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str
             "subtopics": clean_subtopics
         }
 
-        vector = embedding_model.encode(json.dumps(roadmap_payload)).tolist()
+        vector = get_embedding(json.dumps(roadmap_payload)).tolist()
         insert_roadmap(str(uuid.uuid4()), vector, roadmap_payload)
         insert_user_roadmap(str(user_id), str(roadmap.id), prompt)
 
