@@ -21,3 +21,7 @@ weasyprint
 markdown2
 python-dateutil
 fpdf2
+
+passlib[bcrypt]
+
+passlib[bcrypt]
