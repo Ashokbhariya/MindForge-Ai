@@ -71,6 +71,20 @@ export default function Dashboard() {
     navigate("/");
   };
 
+  const handleRoadmapNavigate = () => {
+    if (latestRoadmap) {
+      navigate("/roadmap", {
+        state: {
+          prefill: latestRoadmap.topic,
+          level: latestRoadmap.level,
+          autoGenerate: true,
+        },
+      });
+    } else {
+      navigate("/roadmap");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-inter">
       <div className="flex flex-1">
@@ -127,7 +141,7 @@ export default function Dashboard() {
                       <h3 className="text-xl font-semibold">{latestRoadmap?.topic || "Generate your first roadmap"}</h3>
                       {latestRoadmap?.level && <p className="text-sm text-blue-300 mt-1 capitalize">Level: {latestRoadmap.level}</p>}
                     </div>
-                    <button onClick={() => navigate("/roadmap")} className="bg-blue-600 px-4 py-2 text-white rounded-md hover:bg-blue-700">
+                    <button onClick={handleRoadmapNavigate} className="bg-blue-600 px-4 py-2 text-white rounded-md hover:bg-blue-700">
                       {latestRoadmap ? "Continue" : "Generate"}
                     </button>
                   </div>
