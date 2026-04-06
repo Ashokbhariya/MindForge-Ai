@@ -2,7 +2,7 @@
     import { useParams, useNavigate } from "react-router-dom";
     import { api } from "../services/api";
 
-    const BASE_URL = "http://127.0.0.1:8000";
+    const BASE_URL = "https://mindforge-backend-gwj4.onrender.com";
 
     const getUserId = () => {
     try {

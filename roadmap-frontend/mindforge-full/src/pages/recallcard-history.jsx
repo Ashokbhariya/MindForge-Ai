@@ -8,7 +8,7 @@ export default function RecallCardHistory() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/flashcard/history/user@gmail.com")
+      .get("https://mindforge-backend-gwj4.onrender.com/api/flashcard/history/user@gmail.com")
       .then((res) => setCards(res.data))
       .catch((err) => console.error("Flashcard history error:", err));
   }, []);
@@ -29,3 +29,4 @@ export default function RecallCardHistory() {
     </div>
   );
 }
+

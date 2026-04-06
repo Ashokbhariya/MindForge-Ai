@@ -14,7 +14,7 @@ import "../pages/ProgressCard.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "https://mindforge-backend-gwj4.onrender.com";
 
 // FIX: read userId directly from localStorage instead of relying on a prop
 // (App.jsx renders <ProgressCardPage /> with no props, so the old userId prop was always undefined)

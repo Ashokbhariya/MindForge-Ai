@@ -8,7 +8,7 @@ export default function ProgressCardHistory() {
 
   const fetchHistory = () => {
     axios
-      .get("http://localhost:8000/api/progress/history/user@gmail.com")
+      .get("https://mindforge-backend-gwj4.onrender.com/api/progress/history/user@gmail.com")
       .then((res) => setCards(res.data));
   };
 
@@ -17,7 +17,7 @@ export default function ProgressCardHistory() {
   }, []);
 
   const markReviewed = async (id) => {
-    await axios.put(`http://localhost:8000/api/progress/review/${id}`);
+    await axios.put(`https://mindforge-backend-gwj4.onrender.com/api/progress/review/${id}`);
     fetchHistory();
   };
 
@@ -51,3 +51,4 @@ export default function ProgressCardHistory() {
     </div>
   );
 }
+

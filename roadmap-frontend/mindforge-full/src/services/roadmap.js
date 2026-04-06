@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "./api";  // Tumhare api.js se functions le rahe hain
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "https://mindforge-backend-gwj4.onrender.com";
 
 const Roadmap = () => {
     const [roadmapData, setRoadmapData] = useState([]);
@@ -74,3 +74,4 @@ const Roadmap = () => {
 };
 
 export default Roadmap;
+

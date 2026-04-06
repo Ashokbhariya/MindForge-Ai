@@ -8,7 +8,7 @@ export default function QuizHistory() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/quiz/history/user@gmail.com")
+      .get("https://mindforge-backend-gwj4.onrender.com/api/quiz/history/user@gmail.com")
       .then((res) => setHistory(res.data))
       .catch((err) => console.error("Quiz history error:", err));
   }, []);
@@ -30,3 +30,4 @@ export default function QuizHistory() {
     </div>
   );
 }
+
