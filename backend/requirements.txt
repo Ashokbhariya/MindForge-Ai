@@ -1,4 +1,4 @@
-fastapi
+﻿fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
@@ -21,7 +21,3 @@ weasyprint
 markdown2
 python-dateutil
 fpdf2
-
-passlib[bcrypt]
-
-passlib[bcrypt]
