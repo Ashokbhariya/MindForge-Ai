@@ -185,7 +185,7 @@ async def generate_resource_pdf(data: PDFRequest):
 
         # Return a local URL the frontend can load in the iframe
         filename = os.path.basename(filepath)
-        pdf_url  = f"http://127.0.0.1:8000/generated_pdfs/{filename}"
+        pdf_url  = f"https://mindforge-backend-gwj4.onrender.com/generated_pdfs/{filename}"
         return {"topic": data.topic, "pdf_url": pdf_url}
 
     except Exception as e:
