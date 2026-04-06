@@ -13,6 +13,13 @@ export default function RoadmapInfographic({ roadmap }) {
         navigate(`/quiz/${encodeURIComponent(topic)}`);
     };
 
+    // Generate a fallback resource link using Google search
+    const getResourceLink = (subtopic) => {
+        if (subtopic.link && subtopic.link.startsWith("http")) return subtopic.link;
+        const query = encodeURIComponent(`${subtopic.title} tutorial`);
+        return `https://www.google.com/search?q=${query}`;
+    };
+
     return (
         <div className="relative w-full overflow-y-auto h-[700px]">
             <div
@@ -30,10 +37,8 @@ export default function RoadmapInfographic({ roadmap }) {
                     const cardWidth = 280;
                     const dotSize = 14;
                     const verticalSpacing = 200;
-                    
-                    // --- MODIFIED LINES ---
-                    // This value is half the road width (24px) + a small gap (8px)
-                    const gapFromCenter = 32; 
+                    const gapFromCenter = 32;
+                    const resourceLink = getResourceLink(s);
 
                     return (
                         <motion.div
@@ -66,7 +71,6 @@ export default function RoadmapInfographic({ roadmap }) {
                                         width: `${cardWidth}px`,
                                         position: "absolute",
                                         top: `-20px`,
-                                        // --- MODIFIED LOGIC ---
                                         left: isEven
                                             ? `calc(50% - ${gapFromCenter + cardWidth}px)`
                                             : `calc(50% + ${gapFromCenter}px)`,
@@ -77,18 +81,14 @@ export default function RoadmapInfographic({ roadmap }) {
                                         {s.description?.slice(0, 100) || ""}
                                     </p>
 
-                                    {s.link ? (
-                                        <a
-                                            href={s.link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="block mt-2 text-blue-500 text-sm underline hover:text-blue-700"
-                                        >
-                                            View Resource
-                                        </a>
-                                    ) : (
-                                        <p className="text-gray-400 text-sm mt-2">No Resource</p>
-                                    )}
+                                    <a
+                                        href={resourceLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block mt-2 text-blue-500 text-sm underline hover:text-blue-700"
+                                    >
+                                        View Resource
+                                    </a>
 
                                     <div className="mt-2">
                                         <button
