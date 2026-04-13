@@ -8,7 +8,6 @@ from app.models import Roadmap, SubTopic
 from dotenv import load_dotenv
 from services.qdrant_service import insert_roadmap, insert_user_roadmap, init_qdrant_collection, get_embedding
 
-# Load environment variables
 load_dotenv()
 API_KEY = os.getenv("your_secret_key")
 
@@ -20,10 +19,19 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Ensure main Qdrant collection exists
 init_qdrant_collection()
 
 # ----------------- UTILITIES -----------------
+
+def generate_link(title: str) -> str:
+    """Generate a direct GFG URL from topic title."""
+    slug = title.strip().lower()
+    slug = re.sub(r'[^a-z0-9\s-]', '', slug)   # remove special chars
+    slug = re.sub(r'\s+', '-', slug)             # spaces → hyphens
+    slug = re.sub(r'-+', '-', slug)              # collapse multiple hyphens
+    return f"https://www.geeksforgeeks.org/{slug}/"
+
+
 def extract_clean_json(raw: str) -> str:
     """Extract and clean JSON content from LLM response."""
     match = re.search(r"\{.*\}", raw, re.DOTALL)
@@ -43,7 +51,7 @@ def extract_clean_json(raw: str) -> str:
 
 
 def get_roadmap_from_prompt(prompt: str):
-    """Call LLM API to generate roadmap JSON with resource links."""
+    """Call LLM API to generate roadmap JSON."""
     payload = {
         "model": LLM_MODEL,
         "messages": [
@@ -51,15 +59,18 @@ def get_roadmap_from_prompt(prompt: str):
                 "role": "system",
                 "content": (
                     "You are a roadmap generator. "
-                    "Return valid JSON with keys: topic, description, subtopics (list of {title, description, link}). "
-                    "The 'link' must be a direct tutorial page from GeeksforGeeks only."
+                    "Return valid JSON with keys: topic, description, subtopics "
+                    "(list of {title, description}). "
+                    "Use standard computer science terminology for titles "
+                    "so they match GeeksforGeeks article slugs exactly. "
+                    "Do NOT include any links — they will be generated automatically."
                 )
             },
             {
                 "role": "user",
                 "content": (
                     f"Generate a detailed learning roadmap for: {prompt}. "
-                    "Each subtopic must include a direct GeeksforGeeks tutorial link. Respond with JSON only."
+                    "Respond with JSON only, no extra text."
                 )
             }
         ],
@@ -73,6 +84,7 @@ def get_roadmap_from_prompt(prompt: str):
 
 
 # ----------------- MAIN FUNCTION -----------------
+
 def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str = "Beginner"):
     """Generate roadmap, save to Postgres, Qdrant, and user_roadmaps."""
 
@@ -105,9 +117,7 @@ def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str
     for sub in roadmap_json.get("subtopics", []):
         title = sub.get('title', sub.get('topic', ''))
         desc = sub.get('description', '')
-
-        # Generate direct GeeksforGeeks link
-        link = sub.get('link') or f"https://www.geeksforgeeks.org/{title.strip().replace(' ', '-').lower()}/"
+        link = generate_link(title)   # always generate fresh GFG direct link
 
         db.add(SubTopic(roadmap_id=roadmap.id, title=title, description=desc))
         clean_subtopics.append({

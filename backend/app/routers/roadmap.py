@@ -32,8 +32,13 @@ class RoadmapQuery(BaseModel):
 
 # Utility function for generating a direct resource link
 def generate_link(title: str) -> str:
-    from urllib.parse import quote
-    return f"https://www.geeksforgeeks.org/search/?q={quote(title)}"
+    """Generate a direct GFG URL using common known patterns."""
+    import re
+    slug = title.strip().lower()
+    slug = re.sub(r'[^a-z0-9\s-]', '', slug)   # remove special chars
+    slug = re.sub(r'\s+', '-', slug)             # spaces → hyphens
+    slug = re.sub(r'-+', '-', slug)              # collapse multiple hyphens
+    return f"https://www.geeksforgeeks.org/{slug}/"
 
 
 @router.post("/generate-roadmap")
