@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models import Roadmap, SubTopic
 from dotenv import load_dotenv
 from services.qdrant_service import insert_roadmap, insert_user_roadmap, init_qdrant_collection, get_embedding
+from urllib.parse import quote
 
 load_dotenv()
 API_KEY = os.getenv("your_secret_key")
@@ -21,68 +22,36 @@ headers = {
 
 init_qdrant_collection()
 
-# ----------------- UTILITIES -----------------
+# ----------- TECHNICAL TOPIC DETECTOR -----------
+TECH_KEYWORDS = [
+    "python", "java", "javascript", "c++", "c#", "sql", "html", "css",
+    "array", "linked list", "stack", "queue", "tree", "graph", "sorting",
+    "dynamic programming", "recursion", "hashing", "binary", "algorithm",
+    "data structure", "machine learning", "deep learning", "neural",
+    "database", "dbms", "os", "operating system", "network", "system design",
+    "react", "node", "express", "mongodb", "docker", "git", "cloud", "api",
+    "oops", "object oriented", "compiler", "linux", "kubernetes"
+]
 
-# Curated map for topics that don't follow standard slug patterns
-GFG_SLUG_MAP = {
-    "introduction to business analysis": "business-analysis",
-    "business analysis": "business-analysis",
-    "data structures": "data-structures",
-    "linked list": "data-structures/linked-list",
-    "binary tree": "binary-tree-data-structure",
-    "binary search tree": "binary-search-tree-data-structure-and-algorithm-tutorials",
-    "dynamic programming": "dynamic-programming",
-    "graph": "graph-data-structure-and-algorithms",
-    "sorting algorithms": "sorting-algorithms",
-    "recursion": "recursion",
-    "object oriented programming": "object-oriented-programming-oops-concept-in-java",
-    "oops": "object-oriented-programming-oops-concept-in-java",
-    "operating system": "operating-systems",
-    "dbms": "dbms",
-    "database management system": "dbms",
-    "sql": "sql-tutorial",
-    "python": "python-programming-language",
-    "java": "java",
-    "javascript": "javascript",
-    "c++": "c-plus-plus",
-    "arrays": "array-data-structure",
-    "array": "array-data-structure",
-    "stack": "stack-data-structure",
-    "queue": "queue-data-structure",
-    "hashing": "hashing-data-structure",
-    "greedy algorithm": "greedy-algorithms",
-    "machine learning": "machine-learning",
-    "deep learning": "deep-learning-tutorial",
-    "neural network": "neural-networks-a-beginners-guide",
-    "computer networks": "computer-network-tutorials",
-    "system design": "system-design-tutorial",
-    "react": "reactjs-tutorials",
-    "node.js": "nodejs",
-    "express.js": "express-js",
-    "mongodb": "mongodb-tutorial",
-    "git": "git-lets-get-into-it",
-    "docker": "docker-tutorial",
-}
+def is_technical(title: str) -> bool:
+    return any(kw in title.lower() for kw in TECH_KEYWORDS)
 
+
+# ----------- SMART LINK GENERATOR -----------
 def generate_link(title: str) -> str:
-    """Return a direct GFG URL using curated map, else fallback to GFG search."""
-    key = title.strip().lower()
-    
-    # Check curated map first
-    if key in GFG_SLUG_MAP:
-        return f"https://www.geeksforgeeks.org/{GFG_SLUG_MAP[key]}/"
-    
-    # Try partial match
-    for map_key, slug in GFG_SLUG_MAP.items():
-        if map_key in key or key in map_key:
-            return f"https://www.geeksforgeeks.org/{slug}/"
-    
-    # Fallback: GFG search (guaranteed no 404)
-    from urllib.parse import quote
-    return f"https://www.geeksforgeeks.org/search/?q={quote(title)}"
+    """
+    Returns the best resource link for a topic:
+    - Technical topics → GFG search (always works)
+    - Non-technical topics → Wikipedia search (always works)
+    """
+    if is_technical(title):
+        return f"https://www.geeksforgeeks.org/search/?q={quote(title)}"
+    else:
+        return f"https://en.wikipedia.org/wiki/Special:Search?search={quote(title)}"
 
+
+# ----------- JSON CLEANER -----------
 def extract_clean_json(raw: str) -> str:
-    """Extract and clean JSON content from LLM response."""
     match = re.search(r"\{.*\}", raw, re.DOTALL)
     if not match:
         raise Exception("No JSON object found in LLM response.")
@@ -95,48 +64,46 @@ def extract_clean_json(raw: str) -> str:
     content = re.sub(r",\s*}", "}", content)
     content = re.sub(r",\s*]", "]", content)
 
-    json.loads(content)  # Validate JSON
+    json.loads(content)
     return content
 
 
+# ----------- LLM CALL -----------
 def get_roadmap_from_prompt(prompt: str):
-    """Call LLM API to generate roadmap JSON."""
     payload = {
         "model": LLM_MODEL,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are a roadmap generator. "
-                    "Return valid JSON with keys: topic, description, subtopics "
-                    "(list of {title, description}). "
-                    "Use standard computer science terminology for titles "
-                    "so they match GeeksforGeeks article slugs exactly. "
-                    "Do NOT include any links — they will be generated automatically."
+                    "You are an expert learning roadmap generator. "
+                    "Return ONLY valid JSON with this exact structure: "
+                    '{"topic": string, "description": string, "subtopics": [{"title": string, "description": string}]}. '
+                    "Each subtopic description must be 1-2 sentences, clear and educational. "
+                    "Cover both theory and practical steps. "
+                    "Do NOT include any links — they are auto-generated. "
+                    "Do NOT include any text outside the JSON."
                 )
             },
             {
                 "role": "user",
                 "content": (
-                    f"Generate a detailed learning roadmap for: {prompt}. "
-                    "Respond with JSON only, no extra text."
+                    f"Generate a detailed step-by-step learning roadmap for: {prompt}. "
+                    "Include 8-12 subtopics covering all key concepts from beginner to advanced. "
+                    "Respond with JSON only."
                 )
             }
         ],
-        "temperature": 0.2
+        "temperature": 0.3
     }
     response = requests.post(API_URL, headers=headers, json=payload)
     response.raise_for_status()
-
     raw_content = response.json()['choices'][0]['message']['content']
     return json.loads(extract_clean_json(raw_content))
 
 
-# ----------------- MAIN FUNCTION -----------------
-
+# ----------- MAIN FUNCTION -----------
 def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str = "Beginner"):
-    """Generate roadmap, save to Postgres, Qdrant, and user_roadmaps."""
-
     print(f"🔑 API_KEY loaded: {API_KEY}")
 
     try:
@@ -151,7 +118,6 @@ def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str
 
     roadmap_json["level"] = roadmap_json.get("level", level)
 
-    # Save in Postgres
     roadmap = Roadmap(
         user_id=user_id,
         topic=roadmap_json.get('topic', 'Unknown Topic'),
@@ -166,7 +132,7 @@ def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str
     for sub in roadmap_json.get("subtopics", []):
         title = sub.get('title', sub.get('topic', ''))
         desc = sub.get('description', '')
-        link = generate_link(title)   # always generate fresh GFG direct link
+        link = generate_link(title)
 
         db.add(SubTopic(roadmap_id=roadmap.id, title=title, description=desc))
         clean_subtopics.append({
@@ -176,7 +142,6 @@ def generate_and_save_roadmap(prompt: str, user_id: str, db: Session, level: str
         })
     db.commit()
 
-    # Save in Qdrant
     try:
         roadmap_payload = {
             "roadmap_id": str(roadmap.id),

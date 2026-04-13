@@ -4,59 +4,35 @@
 
     const colors = ["#e74c3c", "#f39c12", "#27ae60", "#2980b9", "#8e44ad"];
 
-    // Generates a direct GFG topic URL from the title
-// Curated slug map for reliable GFG links
-    const GFG_SLUG_MAP = {
-    "introduction to business analysis": "business-analysis",
-    "business analysis": "business-analysis",
-    "data structures": "data-structures",
-    "linked list": "data-structures/linked-list",
-    "binary tree": "binary-tree-data-structure",
-    "binary search tree": "binary-search-tree-data-structure-and-algorithm-tutorials",
-    "dynamic programming": "dynamic-programming",
-    "graph": "graph-data-structure-and-algorithms",
-    "sorting algorithms": "sorting-algorithms",
-    "recursion": "recursion",
-    "object oriented programming": "object-oriented-programming-oops-concept-in-java",
-    "operating system": "operating-systems",
-    "dbms": "dbms",
-    "sql": "sql-tutorial",
-    "python": "python-programming-language",
-    "java": "java",
-    "javascript": "javascript",
-    "arrays": "array-data-structure",
-    "array": "array-data-structure",
-    "stack": "stack-data-structure",
-    "queue": "queue-data-structure",
-    "hashing": "hashing-data-structure",
-    "greedy algorithm": "greedy-algorithms",
-    "machine learning": "machine-learning",
-    "deep learning": "deep-learning-tutorial",
-    "computer networks": "computer-network-tutorials",
-    "system design": "system-design-tutorial",
-    "react": "reactjs-tutorials",
-    "node.js": "nodejs",
-    "git": "git-lets-get-into-it",
-    "docker": "docker-tutorial",
+    const TECH_KEYWORDS = [
+    "python", "java", "javascript", "c++", "sql", "html", "css",
+    "array", "linked list", "stack", "queue", "tree", "graph", "sorting",
+    "dynamic programming", "recursion", "hashing", "binary", "algorithm",
+    "data structure", "machine learning", "deep learning", "neural",
+    "database", "dbms", "operating system", "network", "system design",
+    "react", "node", "docker", "git", "cloud", "api", "oops"
+    ];
+
+    const isTechnical = (title) =>
+    TECH_KEYWORDS.some((kw) => title.toLowerCase().includes(kw));
+
+    // Returns best resource link — GFG for tech, Wikipedia for non-tech
+    const getResourceLink = (title) => {
+    if (isTechnical(title)) {
+        return {
+        url: `https://www.geeksforgeeks.org/search/?q=${encodeURIComponent(title)}`,
+        label: "📖 Read on GFG",
+        className:
+            "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
+        };
+    }
+
+    return {
+        url: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(title)}`,
+        label: "🌐 Read on Wikipedia",
+        className:
+        "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
     };
-
-    const getGFGLink = (title) => {
-    const key = title.trim().toLowerCase();
-
-    // Check exact match
-    if (GFG_SLUG_MAP[key]) {
-        return `https://www.geeksforgeeks.org/${GFG_SLUG_MAP[key]}/`;
-    }
-
-    // Check partial match
-    for (const [mapKey, slug] of Object.entries(GFG_SLUG_MAP)) {
-        if (key.includes(mapKey) || mapKey.includes(key)) {
-        return `https://www.geeksforgeeks.org/${slug}/`;
-        }
-    }
-
-    // Fallback: GFG search — never 404s
-    return `https://www.geeksforgeeks.org/search/?q=${encodeURIComponent(title)}`;
     };
 
     export default function RoadmapInfographic({ roadmap }) {
@@ -76,7 +52,7 @@
         >
             {/* Vertical Line */}
             <div className="absolute left-1/2 top-0 h-full w-12 bg-gray-700 rounded-full transform -translate-x-1/2">
-            <div className="h-full w-2 border-dashed border-white border-l-2 ml-5"></div>
+            <div className="h-full w-2 border-dashed border-white border-l-2 ml-5" />
             </div>
 
             {/* Subtopic Cards */}
@@ -87,7 +63,18 @@
             const verticalSpacing = 200;
             const gapFromCenter = 32;
 
-            const gfgLink = s.link || getGFGLink(s.title);
+            // Use backend link if present, else auto-detect
+            const resource = s.link
+                ? {
+                    url: s.link,
+                    label: s.link.includes("geeksforgeeks")
+                    ? "📖 Read on GFG"
+                    : "🌐 Read on Wikipedia",
+                    className: s.link.includes("geeksforgeeks")
+                    ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                    : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
+                }
+                : getResourceLink(s.title);
 
             return (
                 <motion.div
@@ -128,7 +115,8 @@
                     <span
                         className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1"
                         style={{
-                        backgroundColor: colors[index % colors.length] + "22",
+                        backgroundColor:
+                            colors[index % colors.length] + "22",
                         color: colors[index % colors.length],
                         }}
                     >
@@ -144,19 +132,19 @@
                         {s.description?.length > 90 ? "…" : ""}
                     </p>
 
-                    {/* GFG Link */}
+                    {/* Smart Resource Link */}
                     <div className="mt-3">
                         <a
-                        href={gfgLink}
+                        href={resource.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition font-medium w-full border border-green-200"
+                        className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-lg transition font-medium w-full border ${resource.className}`}
                         >
-                        📖 Read on GFG
+                        {resource.label}
                         </a>
                     </div>
 
-                    {/* Quiz button */}
+                    {/* Quiz Button */}
                     <div className="mt-2">
                         <button
                         className="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-700 transition font-medium w-full"
