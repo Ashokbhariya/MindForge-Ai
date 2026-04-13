@@ -5,15 +5,58 @@
     const colors = ["#e74c3c", "#f39c12", "#27ae60", "#2980b9", "#8e44ad"];
 
     // Generates a direct GFG topic URL from the title
-    const getGFGLink = (title) => {
-    const slug = title
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "") // remove special chars
-        .replace(/\s+/g, "-") // spaces → hyphens
-        .replace(/-+/g, "-"); // collapse multiple hyphens
+// Curated slug map for reliable GFG links
+    const GFG_SLUG_MAP = {
+    "introduction to business analysis": "business-analysis",
+    "business analysis": "business-analysis",
+    "data structures": "data-structures",
+    "linked list": "data-structures/linked-list",
+    "binary tree": "binary-tree-data-structure",
+    "binary search tree": "binary-search-tree-data-structure-and-algorithm-tutorials",
+    "dynamic programming": "dynamic-programming",
+    "graph": "graph-data-structure-and-algorithms",
+    "sorting algorithms": "sorting-algorithms",
+    "recursion": "recursion",
+    "object oriented programming": "object-oriented-programming-oops-concept-in-java",
+    "operating system": "operating-systems",
+    "dbms": "dbms",
+    "sql": "sql-tutorial",
+    "python": "python-programming-language",
+    "java": "java",
+    "javascript": "javascript",
+    "arrays": "array-data-structure",
+    "array": "array-data-structure",
+    "stack": "stack-data-structure",
+    "queue": "queue-data-structure",
+    "hashing": "hashing-data-structure",
+    "greedy algorithm": "greedy-algorithms",
+    "machine learning": "machine-learning",
+    "deep learning": "deep-learning-tutorial",
+    "computer networks": "computer-network-tutorials",
+    "system design": "system-design-tutorial",
+    "react": "reactjs-tutorials",
+    "node.js": "nodejs",
+    "git": "git-lets-get-into-it",
+    "docker": "docker-tutorial",
+    };
 
-    return `https://www.geeksforgeeks.org/${slug}/`;
+    const getGFGLink = (title) => {
+    const key = title.trim().toLowerCase();
+
+    // Check exact match
+    if (GFG_SLUG_MAP[key]) {
+        return `https://www.geeksforgeeks.org/${GFG_SLUG_MAP[key]}/`;
+    }
+
+    // Check partial match
+    for (const [mapKey, slug] of Object.entries(GFG_SLUG_MAP)) {
+        if (key.includes(mapKey) || mapKey.includes(key)) {
+        return `https://www.geeksforgeeks.org/${slug}/`;
+        }
+    }
+
+    // Fallback: GFG search — never 404s
+    return `https://www.geeksforgeeks.org/search/?q=${encodeURIComponent(title)}`;
     };
 
     export default function RoadmapInfographic({ roadmap }) {

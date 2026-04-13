@@ -23,14 +23,63 @@ init_qdrant_collection()
 
 # ----------------- UTILITIES -----------------
 
-def generate_link(title: str) -> str:
-    """Generate a direct GFG URL from topic title."""
-    slug = title.strip().lower()
-    slug = re.sub(r'[^a-z0-9\s-]', '', slug)   # remove special chars
-    slug = re.sub(r'\s+', '-', slug)             # spaces → hyphens
-    slug = re.sub(r'-+', '-', slug)              # collapse multiple hyphens
-    return f"https://www.geeksforgeeks.org/{slug}/"
+# Curated map for topics that don't follow standard slug patterns
+GFG_SLUG_MAP = {
+    "introduction to business analysis": "business-analysis",
+    "business analysis": "business-analysis",
+    "data structures": "data-structures",
+    "linked list": "data-structures/linked-list",
+    "binary tree": "binary-tree-data-structure",
+    "binary search tree": "binary-search-tree-data-structure-and-algorithm-tutorials",
+    "dynamic programming": "dynamic-programming",
+    "graph": "graph-data-structure-and-algorithms",
+    "sorting algorithms": "sorting-algorithms",
+    "recursion": "recursion",
+    "object oriented programming": "object-oriented-programming-oops-concept-in-java",
+    "oops": "object-oriented-programming-oops-concept-in-java",
+    "operating system": "operating-systems",
+    "dbms": "dbms",
+    "database management system": "dbms",
+    "sql": "sql-tutorial",
+    "python": "python-programming-language",
+    "java": "java",
+    "javascript": "javascript",
+    "c++": "c-plus-plus",
+    "arrays": "array-data-structure",
+    "array": "array-data-structure",
+    "stack": "stack-data-structure",
+    "queue": "queue-data-structure",
+    "hashing": "hashing-data-structure",
+    "greedy algorithm": "greedy-algorithms",
+    "machine learning": "machine-learning",
+    "deep learning": "deep-learning-tutorial",
+    "neural network": "neural-networks-a-beginners-guide",
+    "computer networks": "computer-network-tutorials",
+    "system design": "system-design-tutorial",
+    "react": "reactjs-tutorials",
+    "node.js": "nodejs",
+    "express.js": "express-js",
+    "mongodb": "mongodb-tutorial",
+    "git": "git-lets-get-into-it",
+    "docker": "docker-tutorial",
+}
 
+def generate_link(title: str) -> str:
+    """Return a direct GFG URL using curated map, else fallback to GFG search."""
+    key = title.strip().lower()
+    
+    # Check curated map first
+    if key in GFG_SLUG_MAP:
+        return f"https://www.geeksforgeeks.org/{GFG_SLUG_MAP[key]}/"
+    
+    # Try partial match
+    for map_key, slug in GFG_SLUG_MAP.items():
+        if map_key in key or key in map_key:
+            return f"https://www.geeksforgeeks.org/{slug}/"
+    
+    # Fallback: GFG search (guaranteed no 404)
+    from urllib.parse import quote
+    return f"https://www.geeksforgeeks.org/search/?q={quote(title)}"
 
 def extract_clean_json(raw: str) -> str:
     """Extract and clean JSON content from LLM response."""
