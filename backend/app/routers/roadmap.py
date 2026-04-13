@@ -32,8 +32,8 @@ class RoadmapQuery(BaseModel):
 
 # Utility function for generating a direct resource link
 def generate_link(title: str) -> str:
-    slug = title.replace(' ', '-').lower()
-    return f"https://www.geeksforgeeks.org/{slug}/"
+    from urllib.parse import quote
+    return f"https://www.geeksforgeeks.org/search/?q={quote(title)}"
 
 
 @router.post("/generate-roadmap")
