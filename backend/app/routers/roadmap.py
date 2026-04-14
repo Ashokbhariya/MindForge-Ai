@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from uuid import UUID
 from app.database import get_db
-from services.roadmap_service import generate_and_save_roadmap
+from services.roadmap_service import generate_and_save_roadmap, generate_link
 from services.qdrant_service import search_roadmaps
 from app.models import Roadmap
 from services.qdrant_service import insert_user_roadmap
@@ -28,17 +28,6 @@ class RoadmapQuery(BaseModel):
     user_id: UUID
     level: str = "beginner"
     top_k: int = 3
-
-
-# Utility function for generating a direct resource link
-def generate_link(title: str) -> str:
-    """Generate a direct GFG URL using common known patterns."""
-    import re
-    slug = title.strip().lower()
-    slug = re.sub(r'[^a-z0-9\s-]', '', slug)   # remove special chars
-    slug = re.sub(r'\s+', '-', slug)             # spaces → hyphens
-    slug = re.sub(r'-+', '-', slug)              # collapse multiple hyphens
-    return f"https://www.geeksforgeeks.org/{slug}/"
 
 
 @router.post("/generate-roadmap")
@@ -91,7 +80,6 @@ def generate_roadmap(data: PromptInput, db: Session = Depends(get_db)):
     # STEP 3: Generate and save with fallback
     roadmap = generate_and_save_roadmap(data.prompt, data.user_id, db, level=level)
 
-    # Ensure links in generated roadmap
     if roadmap and "subtopics" in roadmap:
         for sub in roadmap["subtopics"]:
             if "link" not in sub or not sub["link"]:
@@ -159,7 +147,6 @@ def get_roadmap(data: RoadmapQuery, db: Session = Depends(get_db)):
             level=data.level
         )
 
-        # Add links to subtopics
         if roadmap and "subtopics" in roadmap:
             for sub in roadmap["subtopics"]:
                 if "link" not in sub or not sub["link"]:

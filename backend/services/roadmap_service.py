@@ -37,17 +37,83 @@ def is_technical(title: str) -> bool:
     return any(kw in title.lower() for kw in TECH_KEYWORDS)
 
 
+# ----------- PLATFORM MAP -----------
+PLATFORM_MAP = [
+    (["html", "css", "javascript", "typescript", "dom", "web api", "fetch", "web components", "service worker"],
+     "https://developer.mozilla.org/en-US/search?q="),
+
+    (["react", "next.js", "vue", "angular", "svelte", "vite", "webpack", "babel", "tailwind"],
+     "https://www.geeksforgeeks.org/"),
+
+    (["excel", "word", "powerpoint", "office 365", "spreadsheet", "pivot table", "vlookup", "macro"],
+     "https://support.microsoft.com/en-us/search?query="),
+
+    (["aws", "ec2", "s3", "lambda", "cloudfront", "rds", "iam", "vpc"],
+     "https://docs.aws.amazon.com/search/doc-search.html#q="),
+
+    (["azure", "gcp", "google cloud", "firebase", "terraform", "ansible", "devops", "ci/cd", "jenkins"],
+     "https://www.geeksforgeeks.org/"),
+
+    (["statistics", "probability", "algebra", "calculus", "trigonometry", "geometry", "linear algebra", "discrete math"],
+     "https://www.khanacademy.org/search?page_search_query="),
+
+    (["chemistry", "biology", "physics", "anatomy", "genetics", "ecology", "science", "thermodynamics"],
+     "https://www.khanacademy.org/search?page_search_query="),
+
+    (["economics", "finance", "accounting", "investment", "stock market", "trading", "valuation", "financial"],
+     "https://www.investopedia.com/search?q="),
+
+    (["history", "geography", "civics", "philosophy", "sociology", "political science"],
+     "https://www.britannica.com/search?query="),
+
+    (["psychology", "mental health", "cognitive", "behavioral", "neuroscience"],
+     "https://www.verywellmind.com/search?q="),
+
+    (["english", "grammar", "writing", "literature", "essay", "reading comprehension", "vocabulary"],
+     "https://www.khanacademy.org/search?page_search_query="),
+
+    (["design", "ux", "ui", "figma", "photoshop", "illustrator", "canva", "graphic design", "wireframe"],
+     "https://www.coursera.org/search?query="),
+
+    (["docker", "kubernetes", "k8s", "container", "microservices", "helm"],
+     "https://www.geeksforgeeks.org/"),
+
+    (["linux", "bash", "shell", "unix", "command line", "terminal"],
+     "https://www.geeksforgeeks.org/"),
+]
+
+
 # ----------- SMART LINK GENERATOR -----------
 def generate_link(title: str) -> str:
     """
-    Returns the best resource link for a topic:
-    - Technical topics → GFG search (always works)
-    - Non-technical topics → Wikipedia search (always works)
+    Returns the best direct resource link for a subtopic:
+    - Web technologies (HTML/CSS/JS) → MDN
+    - Math/Science → Khan Academy
+    - Finance → Investopedia
+    - Psychology → Verywell Mind
+    - MS Office → Microsoft Support
+    - AWS → AWS Docs
+    - Most CS/programming topics → Direct GFG article URL
+    - General/non-technical → Britannica
     """
+    lower = title.lower()
+
+    for keywords, base_url in PLATFORM_MAP:
+        if any(kw in lower for kw in keywords):
+            if base_url == "https://www.geeksforgeeks.org/":
+                slug = re.sub(r'[^a-z0-9\s-]', '', lower)
+                slug = re.sub(r'\s+', '-', slug.strip())
+                slug = re.sub(r'-+', '-', slug)
+                return f"https://www.geeksforgeeks.org/{slug}/"
+            return f"{base_url}{quote(title)}"
+
     if is_technical(title):
-        return f"https://www.geeksforgeeks.org/search/?q={quote(title)}"
-    else:
-        return f"https://en.wikipedia.org/wiki/Special:Search?search={quote(title)}"
+        slug = re.sub(r'[^a-z0-9\s-]', '', lower)
+        slug = re.sub(r'\s+', '-', slug.strip())
+        slug = re.sub(r'-+', '-', slug)
+        return f"https://www.geeksforgeeks.org/{slug}/"
+
+    return f"https://www.britannica.com/search?query={quote(title)}"
 
 
 # ----------- JSON CLEANER -----------
