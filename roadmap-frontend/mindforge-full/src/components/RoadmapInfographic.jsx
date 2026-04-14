@@ -21,7 +21,7 @@
     if (isTechnical(title)) {
         return {
         url: `https://www.geeksforgeeks.org/search/?q=${encodeURIComponent(title)}`,
-        label: "📖 Read on GFG",
+        label: "View Resource",
         className:
             "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
         };
@@ -68,8 +68,8 @@
                 ? {
                     url: s.link,
                     label: s.link.includes("geeksforgeeks")
-                    ? "📖 Read on GFG"
-                    : "🌐 Read on Wikipedia",
+                    ? "View Resource"
+                    : "View Resource",
                     className: s.link.includes("geeksforgeeks")
                     ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                     : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
